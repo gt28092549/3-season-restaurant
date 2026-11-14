@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface StaffCallRepository extends JpaRepository<StaffCall, Long> {
-    List<StaffCall> findByCallStatusOrderByCreatedAtAsc(String callStatus);
+    List<StaffCall> findByStatus(String status);
 }

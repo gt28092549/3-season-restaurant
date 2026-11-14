@@ -12,31 +12,26 @@ public class StaffCall {
     private Long id;
 
     private Integer tableNumber;
-    private String callStatus; // "Pending" หรือ "Confirmed"
-    private LocalDateTime createdAt;
-    private LocalDateTime confirmedAt;
+    private String status; // "Pending" หรือ "Resolved"
+    private LocalDateTime callTime;
 
     public StaffCall() {}
 
     public StaffCall(Integer tableNumber) {
         this.tableNumber = tableNumber;
-        this.callStatus = "Pending";
-        this.createdAt = LocalDateTime.now();
+        this.status = "Pending";
+        this.callTime = LocalDateTime.now();
     }
 
-    // Getters & Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
     public Integer getTableNumber() { return tableNumber; }
     public void setTableNumber(Integer tableNumber) { this.tableNumber = tableNumber; }
 
-    public String getCallStatus() { return callStatus; }
-    public void setCallStatus(String callStatus) { this.callStatus = callStatus; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-
-    public LocalDateTime getConfirmedAt() { return confirmedAt; }
-    public void setConfirmedAt(LocalDateTime confirmedAt) { this.confirmedAt = confirmedAt; }
+    public LocalDateTime getCallTime() { return callTime; }
+    public void setCallTime(LocalDateTime callTime) { this.callTime = callTime; }
 }

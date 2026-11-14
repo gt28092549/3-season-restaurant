@@ -3,14 +3,16 @@ package com.restaurant.controller;
 import com.restaurant.order.model.OrderRequest;
 import com.restaurant.order.model.StaffCall;
 import com.restaurant.order.model.repository.OrderRepository;
+import com.restaurant.order.model.repository.ReviewRepository;
 import com.restaurant.order.model.repository.StaffCallRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/staff")
@@ -22,19 +24,43 @@ public class StaffController {
     @Autowired
     private StaffCallRepository staffCallRepository;
 
-    // หน้าจอหลักของครัวและพนักงานเสิร์ฟ (UI-03)
+    @Autowired
+    private ReviewRepository reviewRepository;
+
     @GetMapping("/queue")
     public String viewOrderQueue(Model model) {
-        List<OrderRequest> allOrders = orderRepository.findAllByOrderByOrderTimeAsc();
-        List<StaffCall> pendingCalls = staffCallRepository.findByCallStatusOrderByCreatedAtAsc("Pending");
+        List<OrderRequest> allOrders = orderRepository.findAll();
 
-        model.addAttribute("orders", allOrders);
-        model.addAttribute("pendingCalls", pendingCalls);
+        List<OrderRequest> queuedOrders = allOrders.stream()
+                .filter(o -> "Queued".equals(o.getStatus()))
+                .toList();
+
+        List<OrderRequest> cookingOrders = allOrders.stream()
+                .filter(o -> "Cooking".equals(o.getStatus()))
+                .toList();
+
+        List<OrderRequest> servedOrders = allOrders.stream()
+                .filter(o -> "Served".equals(o.getStatus()))
+                .toList();
+
+        Set<Integer> activeTables = allOrders.stream()
+                .filter(o -> !"Archived".equals(o.getStatus()))
+                .map(OrderRequest::getTableNumber)
+                .collect(Collectors.toSet());
+
+        List<StaffCall> activeCalls = staffCallRepository.findByStatus("Pending");
+
+        model.addAttribute("queuedOrders", queuedOrders);
+        model.addAttribute("cookingOrders", cookingOrders);
+        model.addAttribute("servedOrders", servedOrders);
+        model.addAttribute("activeTables", activeTables);
+        model.addAttribute("activeCalls", activeCalls);
+        model.addAttribute("reviews", reviewRepository.findAllByOrderByCreatedAtDesc());
+
         return "staff-queue";
     }
 
-    // อัปเดตสถานะอาหาร: Queued -> Cooking -> Ready -> Served (UC-06, UC-08)
-    @PostMapping("/orders/status/{id}")
+    @PostMapping("/order/status/{id}")
     public String updateOrderStatus(@PathVariable Long id, @RequestParam String status) {
         OrderRequest order = orderRepository.findById(id).orElseThrow();
         order.setStatus(status);
@@ -42,13 +68,23 @@ public class StaffController {
         return "redirect:/staff/queue";
     }
 
-    // พนักงานเสิร์ฟกดยืนยันการเรียกจากโต๊ะ (UC-05)
-    @PostMapping("/calls/confirm/{id}")
-    public String confirmStaffCall(@PathVariable Long id) {
+    @PostMapping("/call/resolve/{id}")
+    public String resolveStaffCall(@PathVariable Long id) {
         StaffCall call = staffCallRepository.findById(id).orElseThrow();
-        call.setCallStatus("Confirmed");
-        call.setConfirmedAt(LocalDateTime.now());
+        call.setStatus("Resolved");
         staffCallRepository.save(call);
+        return "redirect:/staff/queue";
+    }
+
+    @PostMapping("/tables/clear/{tableNumber}")
+    public String clearTable(@PathVariable Integer tableNumber) {
+        List<OrderRequest> tableOrders = orderRepository.findByTableNumberOrderByOrderTimeDesc(tableNumber);
+        for (OrderRequest o : tableOrders) {
+            if (!"Archived".equals(o.getStatus())) {
+                o.setStatus("Archived");
+                orderRepository.save(o);
+            }
+        }
         return "redirect:/staff/queue";
     }
 }

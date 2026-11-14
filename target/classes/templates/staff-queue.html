@@ -124,6 +124,23 @@
                         </button>
                     </form>
                 </div>
+                
+                <!-- แถบจัดการสถานะโต๊ะ (Occupied / Available) -->
+                 <div class="card border-0 shadow-sm rounded-4 p-3 mb-4">
+                    <h6 class="fw-bold mb-2"><i class="fa-solid fa-chair text-warning me-2"></i>สถานะโต๊ะอาหาร (โต๊ะที่กำลังใช้งาน)</h6>
+                    <div th:if="${#sets.isEmpty(activeTables)}" class="small text-muted">ขณะนี้ทุกโต๊ะว่างพร้อมให้บริการ</div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <div th:each="t : ${activeTables}" class="border rounded-pill px-3 py-1 bg-light d-flex align-items-center gap-2">
+                            <span class="fw-bold text-danger" th:text="'โต๊ะ ' + ${t} + ' (ไม่ว่าง)'">โต๊ะ 1</span>
+                            <form th:action="@{'/staff/tables/clear/' + ${t}}" method="post" class="m-0">
+                                <button type="submit" class="btn btn-sm btn-outline-success rounded-pill py-0 px-2"
+                                onclick="return confirm('ยืนยันเคลียร์โต๊ะนี้เพื่อรับลูกค้ารอบใหม่?');">
+                                เคลียร์โต๊ะ
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
             </div>
         </div>
     </div>

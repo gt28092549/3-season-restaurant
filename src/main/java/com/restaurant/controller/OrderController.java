@@ -8,6 +8,8 @@ import com.restaurant.order.model.repository.CustomerRepository;
 import com.restaurant.order.model.repository.MenuItemRepository;
 import com.restaurant.order.model.repository.OrderRepository;
 import com.restaurant.order.model.repository.StaffCallRepository;
+import com.restaurant.order.model.Review;
+import com.restaurant.order.model.repository.ReviewRepository;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -221,4 +223,20 @@ public class OrderController {
     public String loginRedirect(@RequestParam(defaultValue = "1") Integer table) {
         return "redirect:/profile?table=" + table;
     }
+    
+    @Autowired
+    private ReviewRepository reviewRepository;
+
+    @PostMapping("/review/submit")
+    public String submitReview(@RequestParam Integer tableNumber,
+                           @RequestParam Integer rating,
+                           @RequestParam(required = false) String comment,
+                           HttpSession session) {
+    Customer currentCustomer = getSessionCustomer(session);
+    String name = (currentCustomer != null) ? currentCustomer.getName() : "ลูกค้าโต๊ะ " + tableNumber;
+
+    reviewRepository.save(new Review(tableNumber, name, rating, comment));
+    return "redirect:/payment?table=" + tableNumber + "&reviewed=true";
+}
+    
 }

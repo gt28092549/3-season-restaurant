@@ -14,8 +14,10 @@ public class Review {
     private Integer tableNumber;
     private String customerName;
     private Integer rating; // 1 ถึง 5 ดาว
+
     @Column(length = 500)
     private String comment;
+
     private LocalDateTime createdAt;
 
     public Review() {}
@@ -28,22 +30,51 @@ public class Review {
         this.createdAt = LocalDateTime.now();
     }
 
-    // Getters & Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public Integer getTableNumber() { return tableNumber; }
-    public void setTableNumber(Integer tableNumber) { this.tableNumber = tableNumber; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public String getCustomerName() { return customerName; }
-    public void setCustomerName(String customerName) { this.customerName = customerName; }
+    public Integer getTableNumber() {
+        return tableNumber;
+    }
 
-    public Integer getRating() { return rating; }
-    public void setRating(Integer rating) { this.rating = rating; }
+    public void setTableNumber(Integer tableNumber) {
+        this.tableNumber = tableNumber;
+    }
 
-    public String getComment() { return comment; }
-    public void setComment(String comment) { this.comment = comment; }
+    public String getCustomerName() {
+        return customerName;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
+    }
+
+    public Integer getRating() {
+        return rating;
+    }
+
+    public void setRating(Integer rating) {
+        this.rating = rating;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }
