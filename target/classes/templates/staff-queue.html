@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="th" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="10"> <!-- รีเฟรชคิวอัตโนมัติทุก 10 วินาที -->
+    <title>คิวออเดอร์ครัว & พนักงานเสิร์ฟ - 3 Season</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Kanit', sans-serif; background-color: #f4f6f9; }
+        .topbar { background: linear-gradient(135deg, #212529, #343a40); color: white; padding: 16px 24px; }
+        .call-alert-card { background: #fff3cd; border-left: 6px solid #ff6b00; border-radius: 12px; padding: 14px 18px; }
+        .order-card { background: white; border-radius: 16px; padding: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-top: 5px solid #ccc; }
+        .border-queued { border-top-color: #dc3545; }
+        .border-cooking { border-top-color: #fd7e14; }
+        .border-ready { border-top-color: #198754; }
+        .border-served { border-top-color: #6c757d; opacity: 0.7; }
+    </style>
+</head>
+<body>
+
+<div class="topbar d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-fire-burner text-warning me-2"></i>หน้าจอครัว & พนักงานเสิร์ฟ (KDS)</h5>
+        <small class="text-white-50">อัปเดตสถานะการปรุงอาหาร และรับแจ้งเตือนเรียกพนักงาน</small>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/admin/customers" th:href="@{/admin/customers}" class="btn btn-outline-light btn-sm rounded-pill px-3">หน้าแอดมิน</a>
+        <a href="/staff/queue" th:href="@{/staff/queue}" class="btn btn-warning btn-sm rounded-pill px-3 fw-bold">
+            <i class="fa-solid fa-rotate-right me-1"></i> รีเฟรช
+        </a>
+    </div>
+</div>
+
+<div class="container py-4">
+
+    <!-- ส่วนแจ้งเตือนลูกค้าเรียกพนักงาน (Waitstaff) -->
+    <div th:if="${!#lists.isEmpty(pendingCalls)}" class="mb-4">
+        <h6 class="fw-bold text-danger mb-2"><i class="fa-solid fa-bell fa-shake me-1"></i> แจ้งเตือนเรียกพนักงาน (รอรับทราบ)</h6>
+        <div class="row g-2">
+            <div class="col-md-4" th:each="call : ${pendingCalls}">
+                <div class="call-alert-card d-flex justify-content-between align-items-center shadow-sm">
+                    <div>
+                        <span class="badge bg-danger fs-6 me-2" th:text="'โต๊ะ ' + ${call.tableNumber}">โต๊ะ 1</span>
+                        <small class="text-muted" th:text="${#temporals.format(call.createdAt, 'HH:mm:ss')}">12:00</small>
+                        <div class="small fw-bold mt-1">ลูกค้ากดเรียกพนักงาน</div>
+                    </div>
+                    <form th:action="@{'/staff/calls/confirm/' + ${call.id}}" method="post">
+                        <button type="submit" class="btn btn-dark btn-sm rounded-pill px-3">
+                            <i class="fa-solid fa-check me-1"></i> รับทราบ
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ส่วนคิวรายการอาหาร (Kitchen & Waitstaff) -->
+    <h5 class="fw-bold mb-3"><i class="fa-solid fa-clipboard-list text-warning me-2"></i>คิวรายการอาหารทั้งหมด</h5>
+
+    <div th:if="${#lists.isEmpty(orders)}" class="text-center text-muted py-5 bg-white rounded-4">
+        ยังไม่มีรายการสั่งอาหารในขณะนี้
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-6 col-lg-4" th:each="o : ${orders}">
+            <div class="order-card h-100 d-flex flex-column justify-content-between"
+                 th:classappend="${o.status == 'Queued' or o.status == 'รับออเดอร์แล้ว'} ? 'border-queued' :
+                                 (${o.status == 'Cooking'} ? 'border-cooking' :
+                                 (${o.status == 'Ready'} ? 'border-ready' : 'border-served'))">
+                <div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-dark fs-6" th:text="'โต๊ะ ' + ${o.tableNumber}">โต๊ะ 1</span>
+                        <span class="small text-muted" th:text="${o.orderTime != null ? #temporals.format(o.orderTime, 'HH:mm') : ''}">12:15</span>
+                    </div>
+
+                    <h5 class="fw-bold mb-1">
+                        <span th:text="${o.foodName}">ผัดไทยกุ้งสด</span>
+                        <span class="text-warning" th:text="' x' + ${o.quantity}">x1</span>
+                    </h5>
+
+                    <div th:if="${o.note != null and !o.note.isEmpty()}" class="alert alert-danger py-1 px-2 small mb-2">
+                        <i class="fa-solid fa-comment-dots me-1"></i> หมายเหตุ: <strong th:text="${o.note}">ไม่เผ็ด</strong>
+                    </div>
+
+                    <div class="mb-3">
+                        สถานะปัจจุบัน:
+                        <span class="badge rounded-pill"
+                              th:classappend="${o.status == 'Queued' or o.status == 'รับออเดอร์แล้ว'} ? 'bg-danger' :
+                                              (${o.status == 'Cooking'} ? 'bg-warning text-dark' :
+                                              (${o.status == 'Ready'} ? 'bg-success' : 'bg-secondary'))"
+                              th:text="${o.status}">Queued</span>
+                    </div>
+                </div>
+
+                <!-- ปุ่มกดเปลี่ยนสถานะตามลำดับการทำงาน -->
+                <div class="d-grid gap-2">
+                    <!-- ขั้น 1: ครัวกดเริ่มทำอาหาร -->
+                    <form th:if="${o.status == 'Queued' or o.status == 'รับออเดอร์แล้ว'}"
+                          th:action="@{'/staff/orders/status/' + ${o.id}}" method="post">
+                        <input type="hidden" name="status" value="Cooking">
+                        <button type="submit" class="btn btn-warning w-100 fw-bold rounded-pill">
+                            <i class="fa-solid fa-fire me-1"></i> เริ่มปรุงอาหาร (Cooking)
+                        </button>
+                    </form>
+
+                    <!-- ขั้น 2: ครัวกดปรุงเสร็จพร้อมเสิร์ฟ -->
+                    <form th:if="${o.status == 'Cooking'}"
+                          th:action="@{'/staff/orders/status/' + ${o.id}}" method="post">
+                        <input type="hidden" name="status" value="Ready">
+                        <button type="submit" class="btn btn-success w-100 fw-bold rounded-pill">
+                            <i class="fa-solid fa-bell-concierge me-1"></i> ปรุงเสร็จพร้อมเสิร์ฟ (Ready)
+                        </button>
+                    </form>
+
+                    <!-- ขั้น 3: พนักงานเสิร์ฟกดยืนยันเสิร์ฟถึงโต๊ะ -->
+                    <form th:if="${o.status == 'Ready'}"
+                          th:action="@{'/staff/orders/status/' + ${o.id}}" method="post">
+                        <input type="hidden" name="status" value="Served">
+                        <button type="submit" class="btn btn-primary w-100 fw-bold rounded-pill">
+                            <i class="fa-solid fa-check-double me-1"></i> ยืนยันเสิร์ฟแล้ว (Served)
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

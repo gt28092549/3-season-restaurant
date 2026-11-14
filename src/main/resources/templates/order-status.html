@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สถานะคำสั่งซื้อ - 3 Season Restaurant</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div class="mobile-container p-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center gap-2">
+            <div class="bg-warning text-white p-2 rounded-circle d-flex align-items-center justify-content-center" style="width:35px; height:35px;">
+                <i class="bi bi-cutlery"></i>
+            </div>
+            <strong class="fs-6">3 Seaso...</strong>
+        </div>
+
+        <button class="btn btn-sm btn-outline-warning text-dark border rounded-pill px-3">
+            <i class="bi bi-geo-alt text-warning me-1"></i> โต๊ะ <i class="bi bi-chevron-down ms-1"></i>
+        </button>
+
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-secondary small"><i class="bi bi-bell"></i> เรียกพนักงาน</span>
+            <div class="bg-dark text-white p-2 rounded-3">
+                <i class="bi bi-bag"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h5 class="fw-bold mb-0">สถานะคำสั่งซื้อ</h5>
+            <span class="text-secondary small">โต๊ะของคุณ: <strong class="text-warning fw-bold fs-6">โต๊ะ 02</strong></span>
+        </div>
+        <div class="bg-light p-1 rounded-pill d-flex border">
+            <button class="btn btn-sm bg-white shadow-sm rounded-pill px-3 fw-bold">กำลังปรุง</button>
+            <button class="btn btn-sm text-secondary rounded-pill px-3">เสิร์ฟแล้ว</button>
+        </div>
+    </div>
+
+    <!-- Container สำหรับแสดงรายการอาหารที่สั่ง -->
+    <div id="orderListContainer"></div>
+
+    <!-- Empty State (กรณีไม่มีออเดอร์) -->
+    <div id="emptyStateCard" class="card border-0 shadow-sm rounded-4 p-4 text-center my-4" style="display: none;">
+        <div class="d-flex justify-content-center mb-3">
+            <div class="bg-warning-subtle text-warning p-3 rounded-circle d-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
+                <i class="bi bi-cup-hot fs-1"></i>
+            </div>
+        </div>
+        <h6 class="fw-bold mb-2">ไม่มีออเดอร์ของ โต๊ะ 02 ที่กำลังปรุงอยู่</h6>
+        <p class="text-muted small mb-4 px-3" style="line-height: 1.5;">
+            กดเลือกอาหารอร่อยจากเมนู แล้วส่งออเดอร์ตรงเข้าห้องครัว 3 Season ได้ทันที
+        </p>
+        <div>
+            <a href="/" class="btn text-white fw-bold px-4 py-2 rounded-pill shadow-sm" style="background-color: #ff8800;">
+                สั่งอาหารที่โต๊ะเลย
+            </a>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <div class="bottom-nav">
+        <a href="/" class="nav-item-custom">
+            <i class="bi bi-cup-straw"></i>
+            สั่งอาหาร
+        </a>
+        <a href="/order-status" class="nav-item-custom active">
+            <i class="bi bi-clipboard-check"></i>
+            สถานะครัว
+        </a>
+        <a href="/payment" class="nav-item-custom">
+            <i class="bi bi-cash-stack"></i>
+            ชำระเงิน
+        </a>
+        <a href="/profile" class="nav-item-custom">
+            <i class="bi bi-person"></i>
+            ล็อกอิน
+        </a>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        renderOrders();
+    });
+
+    function renderOrders() {
+        const container = document.getElementById('orderListContainer');
+        const emptyCard = document.getElementById('emptyStateCard');
+        const orders = JSON.parse(localStorage.getItem('myOrders')) || [];
+
+        if (orders.length === 0) {
+            container.innerHTML = '';
+            emptyCard.style.display = 'block';
+            return;
+        }
+
+        emptyCard.style.display = 'none';
+        let html = '';
+
+        orders.forEach(item => {
+            html += `
+                <div class="card border-0 shadow-sm rounded-4 p-3 mb-3">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="badge bg-warning text-dark rounded-pill px-3 py-2">
+                            <i class="bi bi-fire me-1"></i> ${item.status}
+                        </span>
+                        <small class="text-muted">${item.time} น.</small>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <img src="${item.imageUrl}" class="rounded-3 me-3" style="width: 75px; height: 75px; object-fit: cover;" alt="food">
+                        <div class="flex-grow-1">
+                            <h6 class="fw-bold mb-1">${item.name}</h6>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted small">จำนวน: x${item.quantity}</span>
+                                <strong class="text-danger fs-6">฿${item.price}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        // ปุ่มเพิ่มรายการอาหารอีก
+        html += `
+            <div class="text-center mt-3 mb-4">
+                <a href="/" class="btn btn-outline-warning text-dark rounded-pill px-4 fw-bold">
+                    + สั่งอาหารเพิ่ม
+                </a>
+            </div>
+        `;
+
+        container.innerHTML = html;
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ชำระเงิน - 3 Season Restaurant</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .payment-method-card {
+            border: 1.5px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .payment-method-card.selected {
+            border-color: #ff6b00;
+            background-color: #fffaf5;
+        }
+        .qr-box {
+            background: #fff;
+            border: 2px dashed #ff6b00;
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="mobile-container p-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex align-items-center gap-2">
+            <div class="bg-warning text-white p-2 rounded-circle d-flex align-items-center justify-content-center" style="width:35px; height:35px;">
+                <i class="bi bi-cutlery"></i>
+            </div>
+            <strong class="fs-6">3 Seaso...</strong>
+        </div>
+        <button class="btn btn-sm btn-outline-warning text-dark border rounded-pill px-3">
+            <i class="bi bi-geo-alt text-warning me-1"></i> โต๊ะ <i class="bi bi-chevron-down ms-1"></i>
+        </button>
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-secondary small"><i class="bi bi-bell"></i> เรียกพนักงาน</span>
+            <div class="bg-dark text-white p-2 rounded-3">
+                <i class="bi bi-bag"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Title -->
+    <h5 class="fw-bold mb-3">สรุปรายการชำระเงิน (โต๊ะ 02)</h5>
+
+    <!-- รายการอาหารที่สั่ง -->
+    <div class="card border-0 shadow-sm rounded-4 p-3 mb-3">
+        <h6 class="fw-bold mb-2 border-bottom pb-2">รายการทานในร้าน</h6>
+        <div id="paymentOrderList"></div>
+        
+        <div class="border-top pt-2 mt-2">
+            <div class="d-flex justify-content-between text-muted small mb-1">
+                <span>ราคารวมอาหาร</span>
+                <span id="subtotalText">฿0</span>
+            </div>
+            <div class="d-flex justify-content-between text-muted small mb-2">
+                <span>ภาษีมูลค่าเพิ่ม (VAT 7%)</span>
+                <span>รวมในราคาแล้ว</span>
+            </div>
+            <div class="d-flex justify-content-between fw-bold fs-5 text-dark border-top pt-2">
+                <span>ยอดชำระทั้งสิ้น</span>
+                <span class="text-danger" id="totalPaymentText">฿0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- เลือกช่องทางชำระเงิน -->
+    <h6 class="fw-bold mb-2">เลือกช่องทางการชำระเงิน</h6>
+    <div class="d-flex flex-column gap-2 mb-3">
+        <div class="payment-method-card selected d-flex align-items-center justify-content-between" onclick="selectPaymentMethod(this, 'QR')">
+            <div class="d-flex align-items-center gap-3">
+                <i class="bi bi-qr-code-scan fs-3 text-warning"></i>
+                <div>
+                    <strong class="d-block small">สแกน QR Code (พร้อมเพย์)</strong>
+                    <span class="text-muted style-tiny" style="font-size: 0.75rem;">รองรับทุกแอปธนาคาร</span>
+                </div>
+            </div>
+            <i class="bi bi-check-circle-fill text-warning fs-5 check-icon"></i>
+        </div>
+
+        <div class="payment-method-card d-flex align-items-center justify-content-between" onclick="selectPaymentMethod(this, 'CASH')">
+            <div class="d-flex align-items-center gap-3">
+                <i class="bi bi-cash-stack fs-3 text-success"></i>
+                <div>
+                    <strong class="d-block small">ชำระด้วยเงินสด</strong>
+                    <span class="text-muted" style="font-size: 0.75rem;">ชำระเงินกับพนักงานที่โต๊ะ</span>
+                </div>
+            </div>
+            <i class="bi bi-circle text-muted fs-5 check-icon"></i>
+        </div>
+    </div>
+
+    <!-- แสดง QR Code เมื่อเลือกแบบ QR -->
+    <div id="qrSection" class="qr-box mb-4">
+        <p class="small fw-bold text-muted mb-2">สแกน QR Code เพื่อชำระเงิน</p>
+        <img id="qrImage" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=3SeasonRestaurantPayment" class="img-fluid rounded mb-2" alt="PromptPay QR">
+        <div class="text-danger fw-bold fs-5" id="qrAmountText">฿0</div>
+    </div>
+
+    <!-- ปุ่มกดยืนยันชำระเงิน -->
+    <button class="btn text-white fw-bold w-100 py-3 rounded-pill shadow-sm mb-4" style="background: linear-gradient(90deg, #ff6b00, #ff4500);" onclick="confirmPayment()">
+        ยืนยันการชำระเงิน
+    </button>
+
+    <!-- Bottom Navigation Bar -->
+    <div class="bottom-nav">
+        <a href="/" class="nav-item-custom">
+            <i class="bi bi-cup-straw"></i>
+            สั่งอาหาร
+        </a>
+        <a href="/order-status" class="nav-item-custom">
+            <i class="bi bi-clipboard-check"></i>
+            สถานะครัว
+        </a>
+        <a href="/payment" class="nav-item-custom active">
+            <i class="bi bi-cash-stack"></i>
+            ชำระเงิน
+        </a>
+        <a href="/profile" class="nav-item-custom">
+            <i class="bi bi-person"></i>
+            ล็อกอิน
+        </a>
+    </div>
+
+</div>
+
+<!-- Modal สลิปแจ้งชำระเงินสำเร็จ -->
+<div class="modal fade" id="successModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-sm p-0 m-auto" style="max-width: 400px;">
+        <div class="modal-content rounded-4 border-0 p-3 text-center">
+            <div class="my-3">
+                <i class="bi bi-check-circle-fill text-success display-1"></i>
+            </div>
+            <h5 class="fw-bold">ชำระเงินสำเร็จ!</h5>
+            <p class="text-muted small mb-3">ขอบคุณที่ใช้บริการ 3 Season Restaurant<br>หวังว่าจะได้บริการท่านอีกครั้งครับ</p>
+            <button class="btn btn-warning text-white fw-bold rounded-pill w-100 py-2" onclick="finishPayment()">
+                กลับสู่หน้าหลัก
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let selectedMethod = 'QR';
+    let grandTotal = 0;
+
+    document.addEventListener("DOMContentLoaded", function () {
+        loadPaymentData();
+    });
+
+    function loadPaymentData() {
+        const orders = JSON.parse(localStorage.getItem('myOrders')) || [];
+        const container = document.getElementById('paymentOrderList');
+        
+        if (orders.length === 0) {
+            container.innerHTML = '<p class="text-muted small text-center my-3">ไม่มีรายการอาหารที่รอชำระเงิน</p>';
+            document.getElementById('subtotalText').innerText = '฿0';
+            document.getElementById('totalPaymentText').innerText = '฿0';
+            document.getElementById('qrAmountText').innerText = '฿0';
+            return;
+        }
+
+        let html = '';
+        grandTotal = 0;
+
+        orders.forEach(item => {
+            grandTotal += item.price;
+            html += `
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <span class="fw-bold small">${item.name}</span>
+                        <span class="text-muted small"> (x${item.quantity})</span>
+                    </div>
+                    <span class="fw-bold small">฿${item.price}</span>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+        document.getElementById('subtotalText').innerText = '฿' + grandTotal;
+        document.getElementById('totalPaymentText').innerText = '฿' + grandTotal;
+        document.getElementById('qrAmountText').innerText = '฿' + grandTotal;
+    }
+
+    function selectPaymentMethod(element, method) {
+        selectedMethod = method;
+        document.querySelectorAll('.payment-method-card').forEach(el => {
+            el.classList.remove('selected');
+            el.querySelector('.check-icon').className = 'bi bi-circle text-muted fs-5 check-icon';
+        });
+        
+        element.classList.add('selected');
+        element.querySelector('.check-icon').className = 'bi bi-check-circle-fill text-warning fs-5 check-icon';
+
+        const qrSection = document.getElementById('qrSection');
+        if (method === 'QR') {
+            qrSection.style.display = 'block';
+        } else {
+            qrSection.style.display = 'none';
+        }
+    }
+
+    function confirmPayment() {
+        if (grandTotal === 0) {
+            alert("ยังไม่มีรายการอาหารให้ชำระเงินครับ");
+            return;
+        }
+        const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+        successModal.show();
+    }
+
+    function finishPayment() {
+        // 1. ดึงข้อมูลแต้มและรายการสั่งเดิมมาบวกเพิ่ม
+        let currentOrders = parseInt(localStorage.getItem('orderCount') || '0');
+        let currentPoints = parseInt(localStorage.getItem('userPoints') || '0');
+        
+        const orders = JSON.parse(localStorage.getItem('myOrders')) || [];
+        
+        // คำนวณจำนวนรายการใหม่ และแต้มสะสม (เช่น ทุกๆ 10 บาท ได้ 1 แต้ม)
+        let newOrdersCount = currentOrders + orders.length;
+        let earnedPoints = Math.floor(grandTotal / 10); 
+        let newPoints = currentPoints + earnedPoints;
+
+        // 2. บันทึกค่าใหม่ลง localStorage
+        localStorage.setItem('orderCount', newOrdersCount);
+        localStorage.setItem('userPoints', newPoints);
+
+        // 3. ล้างตะกร้าสินค้าแล้วกลับหน้าหลัก
+        localStorage.removeItem('myOrders');
+        window.location.href = "/";
+    }
+</script>
+</body>
+</html>
