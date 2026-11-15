@@ -194,8 +194,8 @@
 
         <!-- ฟอร์มกดยืนยันการชำระเงินส่งเข้าฐานข้อมูล -->
         <form th:action="@{/payment/confirm}" method="post">
-            <input type="hidden" name="tableNumber" th:value="${tableNumber}">
-            <input type="hidden" name="netTotal" th:value="${netTotal}">
+        <input type="hidden" name="tableNumber" th:value="${tableNumber}">
+            <input type="hidden" name="promoCode" th:value="${promoCode}">   <!-- บรรทัด 198: แทน netTotal เดิม -->
             <button type="submit" class="btn text-white fw-bold w-100 py-3 rounded-pill shadow-sm mb-4"
                     style="background: linear-gradient(90deg, #ff6b00, #ff4500);"
                     onclick="return confirm('ยืนยันการชำระเงินใช่หรือไม่?');">
