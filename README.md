@@ -3,7 +3,13 @@
 ระบบสั่งอาหารออนไลน์ผ่าน QR Code ประจำโต๊ะ พร้อมระบบจัดการคิวครัว (KDS), เรียกพนักงาน, ชำระเงินสะสมแต้มสมาชิก และระบบรีวิวร้าน พัฒนาด้วย **Spring Boot 3.2** และ **Java 17**
 
 ---
+## Group Members
+6831503081 Acharayu Majan 
+6831503083 Aisavares Seephut 
+6831503094 Natthee Nimitchairoj
 
+
+---
 ## 🛠️ Tech Stack
 - **Backend:** Java 17, Spring Boot 3.2.0 (Spring Web, Spring Data JPA)
 - **Frontend:** Thymeleaf, HTML5, CSS3, Bootstrap 5
@@ -40,3 +46,8 @@
    - **หน้าครัวและจัดการคิวพนักงาน:** `http://localhost:8080/staff/queue`
    - **หน้าผู้ดูแลระบบ (Admin Dashboard):** `http://localhost:8080/admin`
    - **หน้าฐานข้อมูล H2 Console:** `http://localhost:8080/h2-console` (JDBC URL: `jdbc:h2:mem:restaurantdb`, User: `sa`, Password: *(เว้นว่าง)*)
+---
+   ## Member Responsibilities
+* **6831503081 Acharayu Majan:** พัฒนาระบบหน้าสั่งอาหารลูกค้า, ระบบตะกร้าสินค้า และหน้าติดตามสถานะคำสั่งซื้อ
+* **6831503083 Aisavares Seephut:** แก้บั๊ก Redirect หลังสั่งอาหาร (`application.properties`) และอัปเดต `README.md`
+* **6831503094 Natthee Nimitchairoj:** พัฒนาระบบ Admin Dashboard, ระบบชำระเงิน และจัดการฐานข้อมูล
