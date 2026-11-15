@@ -27,9 +27,12 @@
         <small class="text-white-50">อัปเดตสถานะการปรุงอาหาร และรับแจ้งเตือนเรียกพนักงาน</small>
     </div>
     <div class="d-flex gap-2">
-        <a href="/admin/customers" th:href="@{/admin/customers}" class="btn btn-outline-light btn-sm rounded-pill px-3">หน้าแอดมิน</a>
+        <a href="/" th:href="@{/}" class="btn btn-outline-light btn-sm rounded-pill px-3">หน้าหลักลูกค้า</a>
         <a href="/staff/queue" th:href="@{/staff/queue}" class="btn btn-warning btn-sm rounded-pill px-3 fw-bold">
             <i class="fa-solid fa-rotate-right me-1"></i> รีเฟรช
+        </a>
+        <a href="/staff/logout" th:href="@{/staff/logout}" class="btn btn-danger btn-sm rounded-pill px-3 fw-bold">
+            <i class="fa-solid fa-right-from-bracket me-1"></i> ออกจากระบบ
         </a>
     </div>
 </div>
@@ -37,17 +40,18 @@
 <div class="container py-4">
 
     <!-- ส่วนแจ้งเตือนลูกค้าเรียกพนักงาน (Waitstaff) -->
-    <div th:if="${!#lists.isEmpty(pendingCalls)}" class="mb-4">
+    <div th:if="${pendingCalls != null and !#lists.isEmpty(pendingCalls)}" class="mb-4">
         <h6 class="fw-bold text-danger mb-2"><i class="fa-solid fa-bell fa-shake me-1"></i> แจ้งเตือนเรียกพนักงาน (รอรับทราบ)</h6>
         <div class="row g-2">
             <div class="col-md-4" th:each="call : ${pendingCalls}">
                 <div class="call-alert-card d-flex justify-content-between align-items-center shadow-sm">
                     <div>
                         <span class="badge bg-danger fs-6 me-2" th:text="'โต๊ะ ' + ${call.tableNumber}">โต๊ะ 1</span>
-                        <small class="text-muted" th:text="${#temporals.format(call.createdAt, 'HH:mm:ss')}">12:00</small>
+                        <small class="text-muted" th:if="${call.createdAt != null}"
+                               th:text="${#temporals.format(call.createdAt, 'HH:mm:ss')}">12:00</small>
                         <div class="small fw-bold mt-1">ลูกค้ากดเรียกพนักงาน</div>
                     </div>
-                    <form th:action="@{'/staff/calls/confirm/' + ${call.id}}" method="post">
+                    <form th:action="@{'/staff/calls/confirm/' + ${call.id}}" method="post" class="m-0">
                         <button type="submit" class="btn btn-dark btn-sm rounded-pill px-3">
                             <i class="fa-solid fa-check me-1"></i> รับทราบ
                         </button>
@@ -57,14 +61,31 @@
         </div>
     </div>
 
+    <!-- แถบจัดการสถานะโต๊ะ (Occupied / Available) -->
+    <div th:if="${activeTables != null}" class="card border-0 shadow-sm rounded-4 p-3 mb-4">
+        <h6 class="fw-bold mb-2"><i class="fa-solid fa-chair text-warning me-2"></i>สถานะโต๊ะอาหาร (โต๊ะที่กำลังใช้งาน)</h6>
+        <div th:if="${#sets.isEmpty(activeTables)}" class="small text-muted">ขณะนี้ทุกโต๊ะว่างพร้อมให้บริการ</div>
+        <div class="d-flex flex-wrap gap-2">
+            <div th:each="t : ${activeTables}" class="border rounded-pill px-3 py-1 bg-light d-flex align-items-center gap-2">
+                <span class="fw-bold text-danger" th:text="'โต๊ะ ' + ${t} + ' (ไม่ว่าง)'">โต๊ะ 1</span>
+                <form th:action="@{'/staff/tables/clear/' + ${t}}" method="post" class="m-0">
+                    <button type="submit" class="btn btn-sm btn-outline-success rounded-pill py-0 px-2"
+                            onclick="return confirm('ยืนยันเคลียร์โต๊ะนี้เพื่อรับลูกค้ารอบใหม่?');">
+                        เคลียร์โต๊ะ
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- ส่วนคิวรายการอาหาร (Kitchen & Waitstaff) -->
     <h5 class="fw-bold mb-3"><i class="fa-solid fa-clipboard-list text-warning me-2"></i>คิวรายการอาหารทั้งหมด</h5>
 
-    <div th:if="${#lists.isEmpty(orders)}" class="text-center text-muted py-5 bg-white rounded-4">
+    <div th:if="${orders == null or #lists.isEmpty(orders)}" class="text-center text-muted py-5 bg-white rounded-4 shadow-sm">
         ยังไม่มีรายการสั่งอาหารในขณะนี้
     </div>
 
-    <div class="row g-3">
+    <div class="row g-3" th:if="${orders != null and !#lists.isEmpty(orders)}">
         <div class="col-md-6 col-lg-4" th:each="o : ${orders}">
             <div class="order-card h-100 d-flex flex-column justify-content-between"
                  th:classappend="${o.status == 'Queued' or o.status == 'รับออเดอร์แล้ว'} ? 'border-queued' :
@@ -124,23 +145,6 @@
                         </button>
                     </form>
                 </div>
-                
-                <!-- แถบจัดการสถานะโต๊ะ (Occupied / Available) -->
-                 <div class="card border-0 shadow-sm rounded-4 p-3 mb-4">
-                    <h6 class="fw-bold mb-2"><i class="fa-solid fa-chair text-warning me-2"></i>สถานะโต๊ะอาหาร (โต๊ะที่กำลังใช้งาน)</h6>
-                    <div th:if="${#sets.isEmpty(activeTables)}" class="small text-muted">ขณะนี้ทุกโต๊ะว่างพร้อมให้บริการ</div>
-                    <div class="d-flex flex-wrap gap-2">
-                        <div th:each="t : ${activeTables}" class="border rounded-pill px-3 py-1 bg-light d-flex align-items-center gap-2">
-                            <span class="fw-bold text-danger" th:text="'โต๊ะ ' + ${t} + ' (ไม่ว่าง)'">โต๊ะ 1</span>
-                            <form th:action="@{'/staff/tables/clear/' + ${t}}" method="post" class="m-0">
-                                <button type="submit" class="btn btn-sm btn-outline-success rounded-pill py-0 px-2"
-                                onclick="return confirm('ยืนยันเคลียร์โต๊ะนี้เพื่อรับลูกค้ารอบใหม่?');">
-                                เคลียร์โต๊ะ
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
             </div>
         </div>
     </div>
