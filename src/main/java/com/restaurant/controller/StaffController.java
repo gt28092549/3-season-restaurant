@@ -5,6 +5,9 @@ import com.restaurant.order.model.StaffCall;
 import com.restaurant.order.model.repository.OrderRepository;
 import com.restaurant.order.model.repository.ReviewRepository;
 import com.restaurant.order.model.repository.StaffCallRepository;
+
+import jakarta.servlet.http.HttpSession;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -27,8 +30,12 @@ public class StaffController {
     @Autowired
     private ReviewRepository reviewRepository;
 
-    @GetMapping("/queue")
-    public String viewOrderQueue(Model model) {
+    @GetMapping("/queue") // หรือ path เดิมของคุณ
+    public String kitchenQueue(HttpSession session, Model model) {
+        // ตรวจสอบสิทธิ์: ต้องล็อกอินเป็น STAFF หรือ ADMIN
+        if (session.getAttribute("staffUser") == null) {
+            return "redirect:/staff/login";
+        }
         List<OrderRequest> allOrders = orderRepository.findAll();
 
         List<OrderRequest> queuedOrders = allOrders.stream()
