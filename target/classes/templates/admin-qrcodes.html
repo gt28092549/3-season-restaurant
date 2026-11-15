@@ -3,48 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>สร้าง QR Code ประจำโต๊ะ - 3 Season Admin</title>
+    <title>ป้าย QR Code ประจำโต๊ะ - 3 Season Restaurant</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap');
         body { font-family: 'Kanit', sans-serif; background-color: #f8f9fa; }
-        .topbar { background: linear-gradient(135deg, #ff6b00, #ff8800); color: white; padding: 16px 24px; }
-        .qr-card { background: white; border-radius: 20px; padding: 20px; text-align: center; border: 2px dashed #ff8800; }
-        @media print { .no-print { display: none !important; } }
+        .qr-card {
+            background: white;
+            border: 2px solid #ff6b00;
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            break-inside: avoid;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; }
+        }
     </style>
 </head>
 <body>
 
-<div class="topbar d-flex flex-wrap justify-content-between align-items-center gap-2 no-print">
-    <h5 class="mb-0 fw-bold"><i class="fa-solid fa-qrcode me-2"></i>สร้าง QR Code สั่งอาหารประจำโต๊ะ</h5>
-    <div class="d-flex gap-2">
-        <a href="/admin/menus" th:href="@{/admin/menus}" class="btn btn-outline-light btn-sm rounded-pill px-3">จัดการเมนู</a>
-        <a href="/admin/reports" th:href="@{/admin/reports}" class="btn btn-outline-light btn-sm rounded-pill px-3">รายงานยอดขาย</a>
-        <button onclick="window.print()" class="btn btn-light btn-sm rounded-pill px-3 fw-bold text-dark">
-            <i class="fa-solid fa-print me-1"></i> พิมพ์ป้าย QR
-        </button>
-    </div>
-</div>
-
 <div class="container py-4">
-    <form action="/admin/qrcodes" th:action="@{/admin/qrcodes}" method="get" class="d-flex align-items-center gap-2 mb-4 no-print">
-        <label class="fw-bold small">จำนวนโต๊ะทั้งหมด:</label>
-        <input type="number" name="totalTables" th:value="${totalTables}" min="1" max="50" class="form-control form-control-sm w-auto rounded-pill px-3">
-        <button type="submit" class="btn btn-warning btn-sm rounded-pill px-3 fw-bold">สร้าง QR</button>
-    </form>
+    <!-- แถบควบคุมด้านบน (ซ่อนอัตโนมัติเวลาสั่งพิมพ์) -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center bg-dark text-white p-3 rounded-4 mb-4 no-print">
+        <div>
+            <h5 class="mb-0 fw-bold"><i class="bi bi-qr-code-scan text-warning me-2"></i>QR Code ประจำโต๊ะ (3 Season Restaurant)</h5>
+            <small class="text-white-50">สแกนเพื่อเข้าสู่เมนูสั่งอาหารของโต๊ะนั้นโดยอัตโนมัติ</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/admin" th:href="@{/admin}" class="btn btn-outline-light btn-sm rounded-pill px-3">กลับหน้า Admin</a>
+            <button onclick="window.print()" class="btn btn-warning btn-sm rounded-pill px-3 fw-bold">
+                <i class="bi bi-printer-fill me-1"></i> พิมพ์ป้าย QR Code
+            </button>
+        </div>
+    </div>
 
+    <!-- ตารางแสดงป้าย QR Code โต๊ะ 1 - 12 -->
     <div class="row g-4">
         <div class="col-6 col-md-4 col-lg-3" th:each="t : ${#numbers.sequence(1, totalTables)}">
-            <div class="qr-card shadow-sm">
-                <div class="fw-bold text-warning">3 SEASON RESTAURANT</div>
-                <h4 class="fw-bold my-1" th:text="'โต๊ะ ' + ${t}">โต๊ะ 1</h4>
-                <img th:src="'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=http://localhost:8080/?table=' + ${t}"
-                     alt="Table QR" class="my-2 rounded-3">
-                <div class="small text-muted">สแกนเพื่อเปิดเมนูและสั่งอาหาร</div>
-                <a href="#" th:href="@{/(table=${t})}" target="_blank" class="btn btn-sm btn-outline-warning text-dark rounded-pill mt-2 no-print">
-                    ทดลองเปิดลิงก์โต๊ะนี้
+            <div class="qr-card shadow-sm h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <span class="badge bg-warning text-dark rounded-pill px-3 py-1 mb-2 fw-bold">3 SEASON RESTAURANT</span>
+                    <h2 class="fw-bold text-dark mb-2" th:text="'โต๊ะ ' + ${t}">โต๊ะ 1</h2>
+                </div>
+
+                <!-- รูป QR Code สร้างอัตโนมัติจากลิงก์ของโต๊ะนั้น -->
+                <div class="my-2">
+                    <img th:src="'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + ${baseUrl} + '/?table=' + ${t}"
+                         alt="QR Code โต๊ะ" class="img-fluid rounded-3 border p-2">
+                </div>
+
+                <div>
+                    <p class="small text-muted mb-2">สแกน QR Code เพื่อสั่งอาหาร</p>
+                    <a href="#" th:href="@{/(table=${t})}" target="_blank"
+                    class="btn btn-sm btn-outline-warning text-dark rounded-pill w-100 fw-bold no-print">
+                    <i class="bi bi-box-arrow-up-right me-1"></i> ทดสอบเข้าโต๊ะนี้
                 </a>
+                </div>
             </div>
         </div>
     </div>

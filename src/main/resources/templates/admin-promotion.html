@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="th" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการบัญชีพนักงาน - 3 Season Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap');
+        body { font-family: 'Kanit', sans-serif; background-color: #f4f6f9; }
+    </style>
+</head>
+<body>
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center bg-dark text-white p-3 rounded-4 mb-4">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-users-gear text-warning me-2"></i>จัดการบัญชีพนักงาน (FR-09)</h5>
+        <a href="/admin" th:href="@{/admin}" class="btn btn-outline-light btn-sm rounded-pill px-3">กลับหน้า Admin</a>
+    </div>
+
+    <!-- ฟอร์มเพิ่มพนักงานใหม่ -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+        <h6 class="fw-bold mb-3">เพิ่มบัญชีผู้ใช้พนักงาน / ผู้จัดการ</h6>
+        <form th:action="@{/admin/staff-manage/add}" method="post" class="row g-3">
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">รหัสพนักงาน</label>
+                <input type="text" name="employeeCode" class="form-control" placeholder="EMP-001" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold">ชื่อ-นามสกุล</label>
+                <input type="text" name="fullName" class="form-control" placeholder="สมชาย ใจดี" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">ตำแหน่ง</label>
+                <select name="position" class="form-select">
+                    <option value="Waitstaff">พนักงานเสิร์ฟ (Waitstaff)</option>
+                    <option value="Kitchen Staff">พนักงานครัว (Kitchen)</option>
+                    <option value="Manager">ผู้จัดการร้าน (Manager)</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">สิทธิ์ระบบ (Role)</label>
+                <select name="role" class="form-select">
+                    <option value="STAFF">STAFF (หน้าครัว)</option>
+                    <option value="ADMIN">ADMIN (ผู้ดูแลระบบ)</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold">Username</label>
+                <input type="text" name="username" class="form-control" placeholder="somchai01" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold">Password</label>
+                <input type="password" name="password" class="form-control" placeholder="รหัสผ่าน" required>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-warning fw-bold rounded-pill px-4">
+                    <i class="fa-solid fa-user-plus me-1"></i> บันทึกบัญชีพนักงาน
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- ตารางรายชื่อพนักงาน -->
+    <div class="card border-0 shadow-sm rounded-4 p-4">
+        <h6 class="fw-bold mb-3">รายชื่อพนักงานในระบบ</h6>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>รหัสพนักงาน</th>
+                        <th>ชื่อ-นามสกุล</th>
+                        <th>ตำแหน่ง</th>
+                        <th>Username</th>
+                        <th>สิทธิ์</th>
+                        <th>วันที่เริ่มงาน</th>
+                        <th>จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="s : ${staffList}">
+                        <td class="fw-bold" th:text="${s.employeeCode}">EMP-001</td>
+                        <td th:text="${s.fullName}">สมชาย</td>
+                        <td th:text="${s.position}">Waitstaff</td>
+                        <td th:text="${s.username}">staff01</td>
+                        <td>
+                            <span class="badge" th:classappend="${s.role == 'ADMIN'} ? 'bg-danger' : 'bg-primary'"
+                                  th:text="${s.role}">STAFF</span>
+                        </td>
+                        <td th:text="${s.hireDate}">2026-11-15</td>
+                        <td>
+                            <form th:action="@{'/admin/staff-manage/delete/' + ${s.id}}" method="post"
+                                  onsubmit="return confirm('ยืนยันลบบัญชีพนักงานนี้?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill">ลบ</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(staffList)}">
+                        <td colspan="7" class="text-center text-muted py-3">ยังไม่มีบัญชีพนักงานเพิ่มเติม (ใช้บัญชีหลัก admin / staff ได้ปกติ)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
