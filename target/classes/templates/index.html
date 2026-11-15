@@ -31,7 +31,7 @@
             <span th:text="'โต๊ะ ' + ${tableNumber}">โต๊ะ 1</span>
         </span>
 
-        <!-- ปุ่มเรียกพนักงาน (อยู่ที่ Header ด้านบนตาม UI-01) -->
+        <!-- ปุ่มเรียกพนักงาน -->
         <div class="d-flex align-items-center gap-2">
             <form action="/order/call-staff" th:action="@{/order/call-staff}" method="post" class="m-0">
                 <input type="hidden" name="tableNumber" th:value="${tableNumber}">
@@ -80,7 +80,6 @@
     </div>
 
     <!-- Category Pills -->
-    <!-- Category Pills -->
     <div class="d-flex gap-2 overflow-auto pb-2 mb-3 no-scrollbar">
         <a href="#" th:href="@{/(table=${tableNumber})}" class="category-pill" th:classappend="${activeCategory == null or activeCategory == 'ทั้งหมด'} ? 'active'">🍽️ ทั้งหมด</a>
         <a href="#" th:href="@{/(table=${tableNumber}, category='อาหารจานเดียว')}" class="category-pill" th:classappend="${activeCategory == 'อาหารจานเดียว'} ? 'active'">🍲 อาหารจานเดียว</a>
@@ -105,10 +104,16 @@
             </div>
         </div>
 
-        <!-- ปุ่ม + หรือ สินค้าหมด (อยู่ในลูป item ถูกต้องแล้ว) -->
+        <!-- ปุ่ม + -->
         <div class="flex-shrink-0">
             <button th:if="${item.isAvailable}" type="button" class="btn-add"
-                    th:attr="onclick=|setupAndOpenModal(${item.id}, '${item.name}', '${item.description}', ${item.price}, '${item.imageUrl}', '${item.type}')|">
+                    th:data-id="${item.id}"
+                    th:data-name="${item.name}"
+                    th:data-desc="${item.description}"
+                    th:data-price="${item.price}"
+                    th:data-img="${item.imageUrl}"
+                    th:data-category="${item.category}"
+                    onclick="setupAndOpenModal(this)">
                 <i class="bi bi-plus"></i>
             </button>
             <span th:unless="${item.isAvailable}" class="badge bg-secondary rounded-pill px-2 py-1" style="font-size: 0.75rem;">
@@ -136,7 +141,6 @@
             สมาชิก
         </a>
     </div>
-
 </div>
 
 <!-- Modal เลือกตัวเลือกและส่งออเดอร์เข้าครัว -->
@@ -156,10 +160,11 @@
                 <h5 class="fw-bold mb-0 text-white position-relative" style="z-index: 2;" id="modalFoodTitle">ชื่ออาหาร</h5>
             </div>
 
-            <form action="/order/place" th:action="@{/order/place}" method="post" class="modal-body p-3">
+            <form action="/order/place" th:action="@{/order/place}" method="post" class="modal-body p-3" id="orderPlaceForm">
                 <input type="hidden" name="tableNumber" th:value="${tableNumber}">
                 <input type="hidden" name="menuItemId" id="modalMenuItemId">
                 <input type="hidden" name="quantity" id="modalQuantityInput" value="1">
+                <input type="hidden" name="note" id="finalNoteInput">
 
                 <!-- คำอธิบายอาหาร -->
                 <div class="mb-3">
@@ -167,11 +172,14 @@
                     <p class="text-muted small mb-0" id="modalFoodDesc">รายละเอียดอาหาร...</p>
                 </div>
 
-                <!-- หมายเหตุ -->
+                <!-- กล่องตัวเลือกย่อยอัตโนมัติ (แสดงตามประเภทเมนู) -->
+                <div id="dynamic-options-container"></div>
+
+                <!-- หมายเหตุเพิ่มเติม -->
                 <div class="mb-3">
-                    <strong class="small d-block mb-1">ตัวเลือกเพิ่มเติม / หมายเหตุถึงทางร้าน</strong>
-                    <input type="text" name="note" id="modalNoteInput" class="form-control form-control-sm rounded-3 bg-light"
-                           placeholder="เช่น พิเศษ, เผ็ดน้อย, หวาน 50%, ไม่ใส่กระเทียม">
+                    <strong class="small d-block mb-1">หมายเหตุเพิ่มเติมถึงทางร้าน</strong>
+                    <input type="text" id="customNoteInput" class="form-control form-control-sm rounded-3 bg-light"
+                           placeholder="เช่น ไม่ใส่ผัก, แยกน้ำแข็ง, ไม่ใส่กระเทียม">
                 </div>
 
                 <!-- ปุ่มเพิ่มจำนวน และส่งออเดอร์เข้าครัว -->
@@ -194,34 +202,98 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    let currentBasePrice = 0;
-    let currentQty = 1;
+let currentUnitPrice = 0;
+let currentQty = 1;
 
-    function setupAndOpenModal(id, name, desc, price, imageUrl, type) {
-        currentBasePrice = price;
-        currentQty = 1;
+function setupAndOpenModal(btn) {
+    const id = btn.getAttribute('data-id');
+    const name = btn.getAttribute('data-name') || '';
+    const desc = btn.getAttribute('data-desc') || '';
+    const price = parseFloat(btn.getAttribute('data-price')) || 0;
+    const img = btn.getAttribute('data-img') || '';
+    const category = btn.getAttribute('data-category') || '';
 
-        document.getElementById('modalMenuItemId').value = id;
-        document.getElementById('modalFoodTitle').innerText = name;
-        document.getElementById('modalFoodDesc').innerText = desc || '';
-        document.getElementById('modalHeroBg').style.backgroundImage = `url('${imageUrl}')`;
-        document.getElementById('modalNoteInput').value = '';
-        document.getElementById('qtyText').innerText = currentQty;
-        document.getElementById('modalQuantityInput').value = currentQty;
-        document.getElementById('totalPriceText').innerText = '฿' + (currentBasePrice * currentQty);
+    document.getElementById('modalMenuItemId').value = id;
+    document.getElementById('modalFoodTitle').innerText = name;
+    document.getElementById('modalFoodDesc').innerText = desc;
+    document.getElementById('modalHeroBg').style.backgroundImage = `url('${img}')`;
+    document.getElementById('customNoteInput').value = '';
 
-        const modal = new bootstrap.Modal(document.getElementById('foodOptionModal'));
-        modal.show();
+    currentUnitPrice = price;
+    currentQty = 1;
+    updateModalPriceDisplay();
+
+    // สร้างตัวเลือกย่อยตามประเภทเมนู
+    renderMenuOptions(name.trim(), category.trim());
+
+    // เปิด Modal
+    const modal = new bootstrap.Modal(document.getElementById('foodOptionModal'));
+    modal.show();
+}
+
+function updateModalQty(delta) {
+    currentQty = Math.max(1, currentQty + delta);
+    updateModalPriceDisplay();
+}
+
+function updateModalPriceDisplay() {
+    document.getElementById('qtyText').innerText = currentQty;
+    document.getElementById('modalQuantityInput').value = currentQty;
+    document.getElementById('totalPriceText').innerText = '฿' + (currentUnitPrice * currentQty).toFixed(0);
+}
+
+function renderMenuOptions(menuName, category) {
+    const container = document.getElementById('dynamic-options-container');
+    container.innerHTML = '';
+    let html = '';
+
+    // 1. เมนูต้มยำ
+    if (menuName.includes('ต้มยำ')) {
+        html += createOptionGroup('ระดับความเผ็ด', 'spiceLevel', ['เผ็ดน้อย', 'เผ็ดกลาง', 'เผ็ดมาก'], 'เผ็ดกลาง');
+        html += createOptionGroup('ภาชนะเสิร์ฟ', 'containerType', ['ใส่ถ้วย', 'หม้อไฟ'], 'ใส่ถ้วย');
+    }
+    // 2. เครื่องดื่ม / ชานม
+    else if (category === 'เครื่องดื่ม' || menuName.includes('ชา') || menuName.includes('นม')) {
+        html += createOptionGroup('ระดับความหวาน', 'sweetLevel', ['หวาน 25%', 'หวาน 50%', 'หวาน 75%', 'หวาน 100%'], 'หวาน 100%');
+    }
+    // 3. อาหารทั่วไป
+    else {
+        html += createOptionGroup('เลือกเนื้อสัตว์', 'meatType', ['หมู', 'ไก่', 'เนื้อ', 'กุ้ง/ทะเล'], 'หมู');
+        html += createOptionGroup('ขนาด', 'portionSize', ['ธรรมดา', 'พิเศษ'], 'ธรรมดา');
     }
 
-    function updateModalQty(delta) {
-        if (currentQty + delta >= 1) {
-            currentQty += delta;
-            document.getElementById('qtyText').innerText = currentQty;
-            document.getElementById('modalQuantityInput').value = currentQty;
-            document.getElementById('totalPriceText').innerText = '฿' + (currentBasePrice * currentQty);
-        }
+    container.innerHTML = html;
+}
+
+function createOptionGroup(label, groupName, options, defaultVal) {
+    let buttons = options.map((opt, idx) => {
+        const id = `${groupName}_${idx}`;
+        const checked = (opt === defaultVal) ? 'checked' : '';
+        return `
+            <input type="radio" class="btn-check menu-opt-radio" name="${groupName}" id="${id}" value="${opt}" ${checked}>
+            <label class="btn btn-outline-warning text-dark btn-sm rounded-pill px-3" style="font-size: 0.78rem;" for="${id}">${opt}</label>
+        `;
+    }).join('');
+
+    return `
+        <div class="mb-3">
+            <strong class="small d-block mb-1">${label}</strong>
+            <div class="d-flex flex-wrap gap-2">${buttons}</div>
+        </div>
+    `;
+}
+
+// รวมตัวเลือกย่อย + หมายเหตุเพิ่มเติมส่งเข้าครัว
+document.getElementById('orderPlaceForm').addEventListener('submit', function () {
+    const selectedOpts = Array.from(document.querySelectorAll('.menu-opt-radio:checked'))
+        .map(el => el.value);
+    const customNote = document.getElementById('customNoteInput').value.trim();
+
+    if (customNote) {
+        selectedOpts.push(customNote);
     }
+    document.getElementById('finalNoteInput').value = selectedOpts.join(', ');
+});
 </script>
 </body>
 </html>

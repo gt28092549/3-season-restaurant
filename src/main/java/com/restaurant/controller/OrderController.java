@@ -57,17 +57,25 @@ public class OrderController {
         return "index";
     }
 
-    // 2. หน้าสถานะครัวของลูกค้า (/order-status)
+    // 2. หน้าสถานะครัวของลูกค้า (/order-status) -> เหลือไว้แค่เมธอดนี้ตัวเดียวครับ
     @GetMapping("/order-status")
-    public String orderStatus(@RequestParam(defaultValue = "1") Integer table, Model model) {
-        List<OrderRequest> orders = orderRepository.findByTableNumberOrderByOrderTimeDesc(table);
+    public String orderStatus(@RequestParam(defaultValue = "1") Integer table,
+                              HttpSession session,
+                              Model model) {
+        List<OrderRequest> orders = orderRepository.findByTableNumberOrderByOrderTimeDesc(table)
+                .stream()
+                .filter(o -> !"Paid".equalsIgnoreCase(o.getStatus()) && !"Archived".equalsIgnoreCase(o.getStatus()))
+                .collect(Collectors.toList());
+
         double grandTotal = orders.stream()
                 .mapToDouble(o -> o.getTotalPrice() != null ? o.getTotalPrice() : 0.0)
                 .sum();
 
         model.addAttribute("tableNumber", table);
         model.addAttribute("orders", orders);
+        model.addAttribute("activeOrders", orders);
         model.addAttribute("grandTotal", grandTotal);
+        model.addAttribute("customer", getSessionCustomer(session));
         return "order-status";
     }
 
