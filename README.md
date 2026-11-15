@@ -50,6 +50,6 @@
    - **หน้าฐานข้อมูล H2 Console:** `http://localhost:8080/h2-console` (JDBC URL: `jdbc:h2:mem:restaurantdb`, User: `sa`, Password: *(เว้นว่าง)*)
 ---
    ## Member Responsibilities
-* **6831503081 Acharayu Majan:** พัฒนาระบบหน้าสั่งอาหารลูกค้า, ระบบตะกร้าสินค้า และหน้าติดตามสถานะคำสั่งซื้อ
+* **6831503081 Acharayu Majan:** พัฒนาระบบหลักทุกอย่าง
 * **6831503083 Aisavares Seephut:** แก้บั๊ก Redirect หลังสั่งอาหาร (`application.properties`) และอัปเดต `README.md`
 * **6831503094 Natthee Nimitchairoj:** แก้ไขระบบจ่ายเงินให้ส่วนลดและราคาแสดงอย่างถูกต้อง
