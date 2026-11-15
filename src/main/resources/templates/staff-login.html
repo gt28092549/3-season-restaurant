@@ -1,73 +1,53 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="th">
+<html lang="th" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>เข้าสู่ระบบพนักงาน - 3 Season Restaurant</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap');
+        body { font-family: 'Kanit', sans-serif; background-color: #f4f6f9; }
+    </style>
 </head>
-<body class="bg-light d-flex align-items-center justify-content-center" style="min-height: 100vh;">
+<body class="d-flex align-items-center justify-content-center min-vh-100 p-3">
 
-<div class="card border-0 shadow-lg rounded-4 p-4" style="max-width: 400px; width: 92%;">
+<div class="card border-0 shadow-sm rounded-4 p-4" style="max-width: 400px; width: 100%;">
     <div class="text-center mb-4">
-        <div class="bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow-sm" style="width: 64px; height: 64px;">
-            <i class="bi bi-shield-lock-fill fs-2"></i>
+        <div class="bg-dark text-warning rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 55px; height: 55px;">
+            <i class="bi bi-shield-lock-fill fs-3"></i>
         </div>
-        <h5 class="fw-bold mb-1">3 SEASON STAFF PORTAL</h5>
-        <p class="text-muted small mb-0">ระบบจัดการคิวครัวและผู้ดูแลร้าน</p>
+        <h5 class="fw-bold mb-1">เข้าสู่ระบบพนักงาน / แอดมิน</h5>
+        <small class="text-muted">3 Season Restaurant Management</small>
     </div>
 
-    <!-- แจ้งเตือนเมื่อรหัสผิดหรือออกจากระบบ -->
-    <div th:if="${errorMsg}" class="alert alert-danger py-2 small text-center rounded-3" th:text="${errorMsg}"></div>
-    <div th:if="${logoutMsg}" class="alert alert-success py-2 small text-center rounded-3" th:text="${logoutMsg}"></div>
+    <div th:if="${error != null}" class="alert alert-danger py-2 small text-center rounded-3" th:text="${error}">
+        Name หรือ Password ไม่ถูกต้อง
+    </div>
 
-    <form th:action="@{/staff/login}" method="post">
+    <form action="/staff/login" th:action="@{/staff/login}" method="post">
         <div class="mb-3">
-            <label class="form-label small fw-bold">ชื่อผู้ใช้งาน (Username)</label>
-            <div class="input-group">
-                <span class="input-group-text bg-light"><i class="bi bi-person-badge"></i></span>
-                <input type="text" name="username" id="usernameInput" class="form-control" placeholder="staff หรือ admin" required>
-            </div>
+            <label class="form-label fw-bold small">Name</label>
+            <input type="text" name="username" class="form-control rounded-pill px-3" placeholder="กรอก Name" required autofocus>
         </div>
 
         <div class="mb-4">
-            <label class="form-label small fw-bold">รหัสผ่าน (Password)</label>
-            <div class="input-group">
-                <span class="input-group-text bg-light"><i class="bi bi-key-fill"></i></span>
-                <input type="password" name="password" id="passwordInput" class="form-control" placeholder="••••••••" required>
-            </div>
+            <label class="form-label fw-bold small">Password</label>
+            <input type="password" name="password" class="form-control rounded-pill px-3" placeholder="กรอก Password" required>
         </div>
 
-        <button type="submit" class="btn text-white fw-bold w-100 py-2 rounded-pill shadow-sm mb-3"
-                style="background: linear-gradient(90deg, #ff6b00, #ff4500);">
-            <i class="bi bi-box-arrow-in-right me-1"></i> เข้าสู่ระบบพนักงาน
+        <button type="submit" class="btn btn-warning text-white fw-bold w-100 rounded-pill py-2 shadow-sm mb-3">
+            เข้าสู่ระบบ
         </button>
-    </form>
 
-    <!-- ข้อมูลบัญชีสำหรับทดสอบส่งงาน -->
-    <div class="bg-light rounded-3 p-2 border text-center small mb-3">
-        <div class="text-muted mb-1" style="font-size: 0.75rem;">บัญชีทดสอบระบบ (คลิกเพื่อกรอกอัตโนมัติ):</div>
-        <div class="d-flex justify-content-center gap-2">
-            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-2" style="font-size: 0.72rem;"
-                    onclick="fillAccount('staff', '1234')">👨‍🍳 พนักงานครัว (staff / 1234)</button>
-            <button type="button" class="btn btn-sm btn-outline-warning text-dark rounded-pill px-2" style="font-size: 0.72rem;"
-                    onclick="fillAccount('admin', 'admin1234')">👑 แอดมิน (admin / admin1234)</button>
+        <div class="text-center">
+            <a href="/" th:href="@{/}" class="text-muted small text-decoration-none">
+                <i class="bi bi-arrow-left me-1"></i> กลับหน้าสั่งอาหารลูกค้า
+            </a>
         </div>
-    </div>
-
-    <div class="text-center">
-        <a href="#" th:href="@{/}" class="text-decoration-none text-secondary small">
-            <i class="bi bi-arrow-left me-1"></i> กลับไปหน้าเมนูสำหรับลูกค้า
-        </a>
-    </div>
+    </form>
 </div>
 
-<script>
-    function fillAccount(user, pass) {
-        document.getElementById('usernameInput').value = user;
-        document.getElementById('passwordInput').value = pass;
-    }
-</script>
 </body>
 </html>
