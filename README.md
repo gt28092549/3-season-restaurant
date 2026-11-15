@@ -5,7 +5,9 @@
 ---
 ## Group Members
 6831503081 Acharayu Majan 
+
 6831503083 Aisavares Seephut 
+
 6831503094 Natthee Nimitchairoj
 
 
@@ -50,4 +52,4 @@
    ## Member Responsibilities
 * **6831503081 Acharayu Majan:** พัฒนาระบบหน้าสั่งอาหารลูกค้า, ระบบตะกร้าสินค้า และหน้าติดตามสถานะคำสั่งซื้อ
 * **6831503083 Aisavares Seephut:** แก้บั๊ก Redirect หลังสั่งอาหาร (`application.properties`) และอัปเดต `README.md`
-* **6831503094 Natthee Nimitchairoj:** พัฒนาระบบ Admin Dashboard, ระบบชำระเงิน และจัดการฐานข้อมูล
+* **6831503094 Natthee Nimitchairoj:** แก้ไขระบบจ่ายเงินให้ส่วนลดและราคาแสดงอย่างถูกต้อง
