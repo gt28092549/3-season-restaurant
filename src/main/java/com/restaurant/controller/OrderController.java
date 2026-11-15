@@ -28,6 +28,107 @@ public class OrderController {
     @Autowired private CustomerRepository customerRepository;
     @Autowired private StaffCallRepository staffCallRepository;
 
+        private boolean isUnpaid(OrderRequest o) {
+        return !"Paid".equalsIgnoreCase(o.getStatus())
+            && !"Archived".equalsIgnoreCase(o.getStatus());
+    }
+
+    private double sumPrice(List<OrderRequest> list) {
+        return list.stream()
+                .mapToDouble(o -> o.getTotalPrice() != null ? o.getTotalPrice() : 0.0)
+                .sum();
+    }
+
+    // คำนวณส่วนลดตาม SRS (ใช้ทั้งหน้าชำระเงินและตอนยืนยัน)
+    private double calcDiscount(String promoCode, double subtotal) {
+        if (promoCode == null || promoCode.trim().isEmpty()) return 0.0;
+        String code = promoCode.trim().toUpperCase();
+        if ("3SEASON50".equals(code) && subtotal >= 150) return 50.0;
+        if ("DINEIN25".equals(code) && subtotal >= 100) return 25.0;
+        if ("YUMMY20".equals(code)) return 20.0;
+        return 0.0;
+    }
+
+    @GetMapping("/payment")
+    public String paymentPage(@RequestParam(defaultValue = "1") Integer table,
+                              @RequestParam(required = false) String promoCode,
+                              @RequestParam(required = false) String paid,
+                              @RequestParam(required = false) String reviewed,
+                              HttpSession session,
+                              Model model) {
+        List<OrderRequest> orders;
+        double discount;
+        String promoMessage = null;
+
+        @SuppressWarnings("unchecked")
+        List<Long> receiptIds = (List<Long>) session.getAttribute("receiptIds_" + table);
+        Double receiptDiscount = (Double) session.getAttribute("receiptDiscount_" + table);
+
+        if (paid != null && reviewed == null && receiptIds != null && receiptDiscount != null) {
+            // ใบเสร็จของบิลที่เพิ่งจ่าย: เฉพาะออเดอร์ในบิลนั้น + ส่วนลดที่ใช้จริง
+            orders = orderRepository.findAllById(receiptIds);
+            discount = receiptDiscount;
+        } else {
+            // ปกติ / หลังรีวิว: เอาเฉพาะออเดอร์ที่ยังไม่จ่าย
+            orders = orderRepository.findByTableNumberOrderByOrderTimeDesc(table)
+                    .stream().filter(this::isUnpaid).collect(Collectors.toList());
+            discount = calcDiscount(promoCode, sumPrice(orders));
+            if (promoCode != null && !promoCode.trim().isEmpty()) {
+                promoMessage = discount > 0
+                        ? "ใช้โค้ด " + promoCode.trim().toUpperCase() + " สำเร็จ! ลด ฿" + (int) discount
+                        : "โค้ดไม่ถูกต้อง หรือยอดสั่งซื้อยังไม่ถึงขั้นต่ำ";
+            }
+        }
+
+        double subtotal = sumPrice(orders);
+        double netTotal = Math.max(0, subtotal - discount);
+
+        model.addAttribute("tableNumber", table);
+        model.addAttribute("orders", orders);
+        model.addAttribute("subtotal", subtotal);
+        model.addAttribute("discount", discount);
+        model.addAttribute("netTotal", netTotal);
+        model.addAttribute("promoCode", promoCode);
+        model.addAttribute("promoMessage", promoMessage);
+        model.addAttribute("customer", getSessionCustomer(session));
+        return "payment";
+    }
+
+    @PostMapping("/payment/confirm")
+    public String confirmPayment(@RequestParam Integer tableNumber,
+                                 @RequestParam(required = false) String promoCode,
+                                 HttpSession session) {
+        List<OrderRequest> unpaid = orderRepository.findByTableNumberOrderByOrderTimeDesc(tableNumber)
+                .stream().filter(this::isUnpaid).collect(Collectors.toList());
+
+        // กดซ้ำ / ไม่มีรายการค้างจ่าย -> ไม่ทำอะไร ไม่บวกแต้มซ้ำ
+        if (unpaid.isEmpty()) {
+            return "redirect:/payment?table=" + tableNumber;
+        }
+
+        double discount = calcDiscount(promoCode, sumPrice(unpaid));
+        double netTotal = Math.max(0, sumPrice(unpaid) - discount);
+
+        for (OrderRequest o : unpaid) {
+            o.setStatus("Paid");
+            orderRepository.save(o);
+        }
+
+        // จดไว้ให้หน้าใบเสร็จใช้
+        session.setAttribute("receiptIds_" + tableNumber,
+                unpaid.stream().map(OrderRequest::getId).collect(Collectors.toList()));
+        session.setAttribute("receiptDiscount_" + tableNumber, discount);
+
+        Customer currentCustomer = getSessionCustomer(session);
+        if (currentCustomer != null) {
+            int bonusPoints = (int) (netTotal / 10);
+            currentCustomer.setPoints(currentCustomer.getPoints() + bonusPoints);
+            customerRepository.save(currentCustomer);
+        }
+
+        return "redirect:/payment?table=" + tableNumber + "&paid=true";
+    }
+
     // 1. หน้าหลักเมนูอาหาร (รองรับค้นหาและเลือกหมวดหมู่)
     @GetMapping("/")
     public String index(@RequestParam(defaultValue = "1") Integer table,
@@ -77,71 +178,6 @@ public class OrderController {
         model.addAttribute("grandTotal", grandTotal);
         model.addAttribute("customer", getSessionCustomer(session));
         return "order-status";
-    }
-
-    // 3. หน้าชำระเงินและใช้โค้ดส่วนลด (/payment)
-    @GetMapping("/payment")
-    public String paymentPage(@RequestParam(defaultValue = "1") Integer table,
-                              @RequestParam(required = false) String promoCode,
-                              HttpSession session,
-                              Model model) {
-        List<OrderRequest> orders = orderRepository.findByTableNumberOrderByOrderTimeDesc(table);
-        double subtotal = orders.stream()
-                .mapToDouble(o -> o.getTotalPrice() != null ? o.getTotalPrice() : 0.0)
-                .sum();
-
-        double discount = 0.0;
-        String promoMessage = null;
-
-        // ตรวจสอบโค้ดส่วนลดตามเอกสาร SRS (3SEASON50, DINEIN25, YUMMY20)
-        if (promoCode != null && !promoCode.trim().isEmpty()) {
-            String code = promoCode.trim().toUpperCase();
-            if ("3SEASON50".equals(code) && subtotal >= 150) {
-                discount = 50.0;
-                promoMessage = "ใช้โค้ด 3SEASON50 สำเร็จ! ลด ฿50";
-            } else if ("DINEIN25".equals(code) && subtotal >= 100) {
-                discount = 25.0;
-                promoMessage = "ใช้โค้ด DINEIN25 สำเร็จ! ลด ฿25";
-            } else if ("YUMMY20".equals(code)) {
-                discount = 20.0;
-                promoMessage = "ใช้โค้ด YUMMY20 สำเร็จ! ลด ฿20";
-            } else {
-                promoMessage = "โค้ดไม่ถูกต้อง หรือยอดสั่งซื้อยังไม่ถึงขั้นต่ำ";
-            }
-        }
-
-        double netTotal = Math.max(0, subtotal - discount);
-
-        model.addAttribute("tableNumber", table);
-        model.addAttribute("orders", orders);
-        model.addAttribute("subtotal", subtotal);
-        model.addAttribute("discount", discount);
-        model.addAttribute("netTotal", netTotal);
-        model.addAttribute("promoCode", promoCode);
-        model.addAttribute("promoMessage", promoMessage);
-        model.addAttribute("customer", getSessionCustomer(session));
-        return "payment";
-    }
-
-    // ยืนยันการชำระเงิน
-    @PostMapping("/payment/confirm")
-    public String confirmPayment(@RequestParam Integer tableNumber,
-                                 @RequestParam Double netTotal,
-                                 HttpSession session) {
-        List<OrderRequest> orders = orderRepository.findByTableNumberOrderByOrderTimeDesc(tableNumber);
-        for (OrderRequest o : orders) {
-            o.setStatus("Paid");
-            orderRepository.save(o);
-        }
-
-        Customer currentCustomer = getSessionCustomer(session);
-        if (currentCustomer != null) {
-            int bonusPoints = (int) (netTotal / 10);
-            currentCustomer.setPoints(currentCustomer.getPoints() + bonusPoints);
-            customerRepository.save(currentCustomer);
-        }
-
-        return "redirect:/payment?table=" + tableNumber + "&paid=true";
     }
 
     // 4. หน้าสมาชิก / ล็อกอินลูกค้า (/profile)
