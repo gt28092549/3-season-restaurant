@@ -7,6 +7,7 @@ import com.restaurant.order.model.StaffCall;
 import com.restaurant.order.model.repository.CustomerRepository;
 import com.restaurant.order.model.repository.MenuItemRepository;
 import com.restaurant.order.model.repository.OrderRepository;
+import com.restaurant.order.model.repository.PromotionRepository;
 import com.restaurant.order.model.repository.StaffCallRepository;
 import com.restaurant.order.model.Review;
 import com.restaurant.order.model.repository.ReviewRepository;
@@ -27,8 +28,10 @@ public class OrderController {
     @Autowired private OrderRepository orderRepository;
     @Autowired private CustomerRepository customerRepository;
     @Autowired private StaffCallRepository staffCallRepository;
+    @Autowired private ReviewRepository reviewRepository;
+    @Autowired private PromotionRepository promotionRepository;
 
-        private boolean isUnpaid(OrderRequest o) {
+    private boolean isUnpaid(OrderRequest o) {
         return !"Paid".equalsIgnoreCase(o.getStatus())
             && !"Archived".equalsIgnoreCase(o.getStatus());
     }
@@ -43,6 +46,23 @@ public class OrderController {
     private double calcDiscount(String promoCode, double subtotal) {
         if (promoCode == null || promoCode.trim().isEmpty()) return 0.0;
         String code = promoCode.trim().toUpperCase();
+
+        // 1. ค้นหาจากฐานข้อมูลโปรโมชันที่ Admin สร้างไว้ (FR-10)
+        java.time.LocalDate today = java.time.LocalDate.now();
+        for (com.restaurant.order.model.Promotion p : promotionRepository.findAll()) {
+            if (p.isActive()
+                    && code.equalsIgnoreCase(p.getPromoCode())
+                    && !today.isBefore(p.getStartDate())
+                    && !today.isAfter(p.getEndDate())
+                    && subtotal >= p.getMinOrderAmount()) {
+                if ("PERCENT".equalsIgnoreCase(p.getDiscountType())) {
+                    return Math.round(subtotal * (p.getDiscountValue() / 100.0));
+                }
+                return p.getDiscountValue();
+            }
+        }
+
+        // 2. โค้ดมาตรฐานตาม SRS (Fallback)
         if ("3SEASON50".equals(code) && subtotal >= 150) return 50.0;
         if ("DINEIN25".equals(code) && subtotal >= 100) return 25.0;
         if ("YUMMY20".equals(code)) return 20.0;
@@ -91,6 +111,13 @@ public class OrderController {
         model.addAttribute("promoCode", promoCode);
         model.addAttribute("promoMessage", promoMessage);
         model.addAttribute("customer", getSessionCustomer(session));
+    
+        java.time.LocalDate today = java.time.LocalDate.now();
+        List<com.restaurant.order.model.Promotion> activePromos = promotionRepository.findAll().stream()
+                .filter(p -> p.isActive() && !today.isBefore(p.getStartDate()) && !today.isAfter(p.getEndDate()))
+                .collect(Collectors.toList());
+        model.addAttribute("activePromos", activePromos);
+
         return "payment";
     }
 
@@ -158,7 +185,7 @@ public class OrderController {
         return "index";
     }
 
-    // 2. หน้าสถานะครัวของลูกค้า (/order-status) -> เหลือไว้แค่เมธอดนี้ตัวเดียวครับ
+    // 2. หน้าสถานะครัวของลูกค้า (/order-status)
     @GetMapping("/order-status")
     public String orderStatus(@RequestParam(defaultValue = "1") Integer table,
                               HttpSession session,
@@ -212,7 +239,7 @@ public class OrderController {
         return "redirect:/profile?table=" + table;
     }
 
-    // 5. สั่งอาหารเข้าครัว
+    // 5. สั่งอาหารเข้าครัว (บันทึกเฉพาะจำนวนครั้งที่สั่ง ยังไม่บวกแต้มจนกว่าจะชำระเงิน)
     @PostMapping("/order/place")
     public String placeOrder(@RequestParam Integer tableNumber,
                              @RequestParam Long menuItemId,
@@ -237,7 +264,6 @@ public class OrderController {
         Customer currentCustomer = getSessionCustomer(session);
         if (currentCustomer != null) {
             order.setCustomerPhone(currentCustomer.getPhone());
-            currentCustomer.setPoints(currentCustomer.getPoints() + (int) (total / 10));
             currentCustomer.setTotalOrders(currentCustomer.getTotalOrders() + 1);
             customerRepository.save(currentCustomer);
         }
@@ -267,20 +293,16 @@ public class OrderController {
     public String loginRedirect(@RequestParam(defaultValue = "1") Integer table) {
         return "redirect:/profile?table=" + table;
     }
-    
-    @Autowired
-    private ReviewRepository reviewRepository;
 
     @PostMapping("/review/submit")
     public String submitReview(@RequestParam Integer tableNumber,
-                           @RequestParam Integer rating,
-                           @RequestParam(required = false) String comment,
-                           HttpSession session) {
-    Customer currentCustomer = getSessionCustomer(session);
-    String name = (currentCustomer != null) ? currentCustomer.getName() : "ลูกค้าโต๊ะ " + tableNumber;
+                               @RequestParam Integer rating,
+                               @RequestParam(required = false) String comment,
+                               HttpSession session) {
+        Customer currentCustomer = getSessionCustomer(session);
+        String name = (currentCustomer != null) ? currentCustomer.getName() : "ลูกค้าโต๊ะ " + tableNumber;
 
-    reviewRepository.save(new Review(tableNumber, name, rating, comment));
-    return "redirect:/payment?table=" + tableNumber + "&reviewed=true";
-}
-    
+        reviewRepository.save(new Review(tableNumber, name, rating, comment));
+        return "redirect:/payment?table=" + tableNumber + "&reviewed=true";
+    }
 }

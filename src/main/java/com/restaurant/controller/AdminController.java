@@ -3,6 +3,7 @@ package com.restaurant.controller;
 import com.restaurant.entity.MenuItem;
 import com.restaurant.order.model.OrderRequest;
 import com.restaurant.order.model.Promotion;
+import com.restaurant.order.model.Review;
 import com.restaurant.order.model.StaffAccount;
 import com.restaurant.order.model.repository.MenuItemRepository;
 import com.restaurant.order.model.repository.OrderRepository;
@@ -48,6 +49,7 @@ public class AdminController {
 
         List<MenuItem> menuItems = menuItemRepository.findAll();
         List<OrderRequest> allOrders = orderRepository.findAll();
+        List<Review> reviews = reviewRepository.findAll();
 
         // สร้าง Map จับคู่ชื่ออาหาร -> ราคา เพื่อคำนวณยอดขายรวมได้อย่างแม่นยำ
         java.util.Map<String, Double> priceMap = menuItems.stream()
@@ -56,6 +58,11 @@ public class AdminController {
         double totalSales = allOrders.stream()
                 .mapToDouble(o -> priceMap.getOrDefault(o.getFoodName(), 0.0) * o.getQuantity())
                 .sum();
+
+        double avgRating = reviews.stream()
+        .mapToInt(Review::getRating)
+        .average()
+        .orElse(0.0);
 
         Set<Integer> activeTables = allOrders.stream()
                 .filter(o -> !"Archived".equals(o.getStatus()))
@@ -68,6 +75,8 @@ public class AdminController {
         model.addAttribute("totalOrders", allOrders.size());
         model.addAttribute("activeTableCount", activeTables.size());
         model.addAttribute("reviews", reviewRepository.findAllByOrderByCreatedAtDesc());
+        model.addAttribute("reviews", reviews);
+        model.addAttribute("avgRating", String.format("%.1f", avgRating));
 
         return "admin-dashboard"; // เช็กในโฟลเดอร์ templates/ ว่าไฟล์ชื่อ admin-dashboard.html หรือ admin.html
     }

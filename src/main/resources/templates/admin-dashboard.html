@@ -35,25 +35,34 @@
             </a>
             <a href="/admin/logout" th:href="@{/admin/logout}" class="btn btn-danger btn-sm rounded-pill px-3">ออกจากระบบ</a>
         </div>
+    </div>
 
-    <!-- การ์ดสรุปยอดขายและออเดอร์ (FR-11) -->
+    <!-- การ์ดสรุปยอดขาย ออเดอร์ และคะแนนรีวิว (4 คอลัมน์) -->
     <div class="row g-3 mb-4">
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
                 <small class="text-muted">ยอดขายรวมทั้งหมด</small>
                 <h3 class="fw-bold text-success mb-0" th:text="'฿' + ${#numbers.formatDecimal(totalSales, 1, 2)}">฿0.00</h3>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
                 <small class="text-muted">จำนวนรายการสั่งซื้อทั้งหมด</small>
                 <h3 class="fw-bold text-primary mb-0" th:text="${totalOrders} + ' รายการ'">0 รายการ</h3>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
                 <small class="text-muted">โต๊ะที่กำลังใช้งาน</small>
                 <h3 class="fw-bold text-warning mb-0" th:text="${activeTableCount} + ' โต๊ะ'">0 โต๊ะ</h3>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <small class="text-muted">คะแนนรีวิวเฉลี่ย</small>
+                <h3 class="fw-bold mb-0" style="color: #f59e0b;">
+                    <i class="fa-solid fa-star me-1"></i><span th:text="${avgRating != null ? avgRating : '0.0'}">0.0</span> <small class="fs-6 text-muted">/ 5.0</small>
+                </h3>
             </div>
         </div>
     </div>
@@ -85,36 +94,69 @@
         </form>
     </div>
 
-    <!-- ตารางรายการเมนูอาหารทั้งหมด -->
-    <div class="card border-0 shadow-sm rounded-4 p-4">
-        <h6 class="fw-bold mb-3">รายการเมนูอาหารในร้าน</h6>
-        <div class="table-responsive">
-            <table class="table align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>ชื่อเมนู</th>
-                        <th>หมวดหมู่</th>
-                        <th>ราคา</th>
-                        <th>จัดการ</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr th:each="item : ${menuItems}">
-                        <td class="fw-bold" th:text="${item.name}">ชื่ออาหาร</td>
-                        <td th:text="${item.category}">หมวดหมู่</td>
-                        <td th:text="'฿' + ${item.price}">฿0</td>
-                        <td>
-                            <form th:action="@{'/admin/menu/delete/' + ${item.id}}" method="post"
-                                  onsubmit="return confirm('ยืนยันลบเมนูนี้?');">
-                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill">ลบเมนู</button>
-                            </form>
-                        </td>
-                    </tr>
-                    <tr th:if="${#lists.isEmpty(menuItems)}">
-                        <td colspan="4" class="text-center text-muted py-3">ยังไม่มีรายการเมนูอาหาร</td>
-                    </tr>
-                </tbody>
-            </table>
+    <!-- ตารางรายการเมนูอาหารทั้งหมด และ ตารางรีวิวลูกค้า -->
+    <div class="row g-4">
+        <!-- ฝั่งซ้าย: รายการเมนูอาหาร -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                <h6 class="fw-bold mb-3">รายการเมนูอาหารในร้าน</h6>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ชื่อเมนู</th>
+                                <th>หมวดหมู่</th>
+                                <th>ราคา</th>
+                                <th>จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="item : ${menuItems}">
+                                <td class="fw-bold" th:text="${item.name}">ชื่ออาหาร</td>
+                                <td th:text="${item.category}">หมวดหมู่</td>
+                                <td th:text="'฿' + ${item.price}">฿0</td>
+                                <td>
+                                    <form th:action="@{'/admin/menu/delete/' + ${item.id}}" method="post"
+                                          onsubmit="return confirm('ยืนยันลบเมนูนี้?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill">ลบเมนู</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(menuItems)}">
+                                <td colspan="4" class="text-center text-muted py-3">ยังไม่มีรายการเมนูอาหาร</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ฝั่งขวา: รีวิวและความคิดเห็นจากลูกค้า -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                <h6 class="fw-bold mb-3"><i class="fa-solid fa-star text-warning me-2"></i>รีวิวและความคิดเห็นจากลูกค้า</h6>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 100px;">คะแนน</th>
+                                <th>ความคิดเห็น</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="rev : ${reviews}">
+                                <td class="fw-bold" style="color: #f59e0b;">
+                                    <span th:text="${rev.rating}">5</span> <i class="fa-solid fa-star"></i>
+                                </td>
+                                <td th:text="${rev.comment}">อาหารอร่อยมาก</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(reviews)}">
+                                <td colspan="2" class="text-center text-muted py-3">ยังไม่มีรีวิวจากลูกค้า</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 </div>

@@ -65,11 +65,21 @@
     <!-- Title -->
     <h5 class="fw-bold mb-3" th:text="'สรุปรายการชำระเงิน (โต๊ะ ' + ${tableNumber} + ')'">สรุปรายการชำระเงิน</h5>
 
-    <!-- แจ้งเตือนชำระเงินสำเร็จ -->
-    <div th:if="${param.paid}" class="alert alert-success rounded-4 text-center py-3 mb-3 shadow-sm">
-        <i class="bi bi-check-circle-fill text-success fs-1 d-block mb-1"></i>
-        <strong class="d-block">ชำระเงินสำเร็จเรียบร้อยแล้ว!</strong>
-        <span class="small text-muted">ขอบคุณที่ใช้บริการ 3 Season Restaurant ครับ</span>
+    <!-- กล่องแจ้งเตือนชำระเงินสำเร็จ -->
+    <div th:if="${param.paid != null}" class="alert alert-success text-center rounded-4 p-4 mb-4">
+        <i class="bi bi-check-circle-fill fs-1 text-success mb-2 d-block"></i>
+        <h5 class="fw-bold mb-1">ชำระเงินสำเร็จเรียบร้อยแล้ว!</h5>
+        <p class="mb-2 text-muted small">ขอบคุณที่ใช้บริการ 3 Season Restaurant ครับ</p>
+
+        <!-- ส่วนแสดงคะแนนสะสมที่ได้รับ (ทุก 10 บาท = 1 คะแนน) -->
+        <div class="d-inline-block bg-white border border-warning rounded-pill px-3 py-1 mt-1 shadow-sm"
+             th:if="${netTotal != null and netTotal >= 10}">
+            <span class="fw-bold text-dark small">
+                🎉 คุณได้รับคะแนนสะสมเพิ่ม 
+                <span class="text-warning fs-6" th:text="'+' + ${T(java.lang.Math).floor(netTotal / 10).intValue()}">+0</span> 
+                คะแนน!
+            </span>
+        </div>
     </div>
 
     <!-- กล่องรีวิวร้านหลังชำระเงิน -->
@@ -122,19 +132,118 @@
             </div>
         </div>
 
-        <!-- ช่องกรอกโค้ดส่วนลดตาม SRS -->
-        <form th:if="${not #lists.isEmpty(orders) and param.paid == null}" th:action="@{/payment}" method="get" class="mt-2 pt-2 border-top">
-            <input type="hidden" name="table" th:value="${tableNumber}">
-            <label class="small fw-bold text-secondary mb-1">โค้ดส่วนลด (3SEASON50, DINEIN25, YUMMY20)</label>
-            <div class="input-group input-group-sm">
-                <input type="text" name="promoCode" class="form-control rounded-start-pill"
-                       th:value="${promoCode}" placeholder="กรอกรหัสส่วนลดที่นี่">
-                <button type="submit" class="btn btn-warning text-white fw-bold rounded-end-pill px-3">ใช้โค้ด</button>
+        <!-- ส่วนเลือกใช้คูปองส่วนลดแบบกดเลือก -->
+        <div th:if="${not #lists.isEmpty(orders) and param.paid == null}" class="mt-3 pt-2 border-top">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="small fw-bold text-secondary mb-0">
+                    <i class="bi bi-ticket-perforated-fill text-warning me-1"></i>เลือกโค้ดส่วนลด
+                </label>
+                <!-- ปุ่มยกเลิกการใช้โค้ด (แสดงเมื่อกำลังใช้โค้ดอยู่) -->
+                <a href="#" th:if="${discount > 0}" th:href="@{/payment(table=${tableNumber})}"
+                   class="text-danger text-decoration-none fw-bold" style="font-size: 0.75rem;">
+                    <i class="bi bi-x-circle"></i> ยกเลิกโค้ด
+                </a>
             </div>
-            <small th:if="${promoMessage != null}" class="d-block mt-1 fw-bold"
-                   th:classappend="${discount > 0} ? 'text-success' : 'text-danger'"
-                   th:text="${promoMessage}"></small>
-        </form>
+
+            <!-- แถบแจ้งสถานะว่ากำลังใช้โค้ดไหนอยู่ -->
+            <div th:if="${discount > 0 and promoCode != null}"
+                 class="alert alert-success py-2 px-3 rounded-3 d-flex justify-content-between align-items-center mb-2 small">
+                <span>
+                    <i class="bi bi-check-circle-fill me-1"></i>
+                    กำลังใช้โค้ด: <strong th:text="${promoCode.toUpperCase()}">YUMMY20</strong>
+                </span>
+                <span class="fw-bold" th:text="'ลด -฿' + ${#numbers.formatDecimal(discount, 1, 'NONE', 0, 'POINT')}">ลด -฿20</span>
+            </div>
+
+            <!-- รายการคูปองให้กดเลือก (เช็กยอดขั้นต่ำอัตโนมัติ) -->
+            <div class="d-flex flex-column gap-2">
+
+                <!-- 1. คูปองมาตรฐาน: YUMMY20 (ไม่มีขั้นต่ำ ใช้ได้ตลอด) -->
+                <div class="border rounded-3 p-2 d-flex justify-content-between align-items-center"
+                     th:classappend="${promoCode != null and promoCode.equalsIgnoreCase('YUMMY20')} ? 'border-warning bg-warning-subtle' : 'bg-light'">
+                    <div>
+                        <strong class="small d-block text-dark">YUMMY20 <span class="badge bg-warning text-dark">ลด ฿20</span></strong>
+                        <span class="text-success" style="font-size: 0.72rem;"><i class="bi bi-check-circle"></i> ใช้ได้ทันที (ไม่มีขั้นต่ำ)</span>
+                    </div>
+                    <a href="#" th:href="@{/payment(table=${tableNumber}, promoCode='YUMMY20')}"
+                       class="btn btn-sm rounded-pill fw-bold px-3"
+                       th:classappend="${promoCode != null and promoCode.equalsIgnoreCase('YUMMY20')} ? 'btn-success disabled' : 'btn-warning text-white'"
+                       th:text="${promoCode != null and promoCode.equalsIgnoreCase('YUMMY20')} ? 'กำลังใช้งาน' : 'กดใช้โค้ด'">กดใช้โค้ด</a>
+                </div>
+
+                <!-- 2. คูปองมาตรฐาน: DINEIN25 (ขั้นต่ำ 100 บาท) -->
+                <div class="border rounded-3 p-2 d-flex justify-content-between align-items-center"
+                     th:classappend="${promoCode != null and promoCode.equalsIgnoreCase('DINEIN25')} ? 'border-warning bg-warning-subtle' : 'bg-light'">
+                    <div>
+                        <strong class="small d-block text-dark">DINEIN25 <span class="badge bg-warning text-dark">ลด ฿25</span></strong>
+                        <span th:if="${subtotal >= 100}" class="text-success" style="font-size: 0.72rem;">
+                            <i class="bi bi-check-circle"></i> ใช้ได้ (ยอดสั่งซื้อครบ ฿100)
+                        </span>
+                        <span th:unless="${subtotal >= 100}" class="text-danger" style="font-size: 0.72rem;">
+                            <i class="bi bi-exclamation-circle"></i> ใช้ไม่ได้ (สั่งเพิ่มอีก ฿<span th:text="${#numbers.formatDecimal(100 - subtotal, 1, 'NONE', 0, 'POINT')}">0</span>)
+                        </span>
+                    </div>
+                    <a href="#" th:if="${subtotal >= 100}"
+                       th:href="@{/payment(table=${tableNumber}, promoCode='DINEIN25')}"
+                       class="btn btn-sm rounded-pill fw-bold px-3"
+                       th:classappend="${promoCode != null and promoCode.equalsIgnoreCase('DINEIN25')} ? 'btn-success disabled' : 'btn-warning text-white'"
+                       th:text="${promoCode != null and promoCode.equalsIgnoreCase('DINEIN25')} ? 'กำลังใช้งาน' : 'กดใช้โค้ด'">กดใช้โค้ด</a>
+                    <button th:unless="${subtotal >= 100}" type="button" class="btn btn-sm btn-secondary rounded-pill px-3" disabled>
+                        ไม่ถึงขั้นต่ำ
+                    </button>
+                </div>
+
+                <!-- 3. คูปองมาตรฐาน: 3SEASON50 (ขั้นต่ำ 150 บาท) -->
+                <div class="border rounded-3 p-2 d-flex justify-content-between align-items-center"
+                     th:classappend="${promoCode != null and promoCode.equalsIgnoreCase('3SEASON50')} ? 'border-warning bg-warning-subtle' : 'bg-light'">
+                    <div>
+                        <strong class="small d-block text-dark">3SEASON50 <span class="badge bg-warning text-dark">ลด ฿50</span></strong>
+                        <span th:if="${subtotal >= 150}" class="text-success" style="font-size: 0.72rem;">
+                            <i class="bi bi-check-circle"></i> ใช้ได้ (ยอดสั่งซื้อครบ ฿150)
+                        </span>
+                        <span th:unless="${subtotal >= 150}" class="text-danger" style="font-size: 0.72rem;">
+                            <i class="bi bi-exclamation-circle"></i> ใช้ไม่ได้ (สั่งเพิ่มอีก ฿<span th:text="${#numbers.formatDecimal(150 - subtotal, 1, 'NONE', 0, 'POINT')}">0</span>)
+                        </span>
+                    </div>
+                    <a href="#" th:if="${subtotal >= 150}"
+                       th:href="@{/payment(table=${tableNumber}, promoCode='3SEASON50')}"
+                       class="btn btn-sm rounded-pill fw-bold px-3"
+                       th:classappend="${promoCode != null and promoCode.equalsIgnoreCase('3SEASON50')} ? 'btn-success disabled' : 'btn-warning text-white'"
+                       th:text="${promoCode != null and promoCode.equalsIgnoreCase('3SEASON50')} ? 'กำลังใช้งาน' : 'กดใช้โค้ด'">กดใช้โค้ด</a>
+                    <button th:unless="${subtotal >= 150}" type="button" class="btn btn-sm btn-secondary rounded-pill px-3" disabled>
+                        ไม่ถึงขั้นต่ำ
+                    </button>
+                </div>
+
+                <!-- 4. คูปองเพิ่มเติมที่ Admin สร้างจากหน้า FR-10 (ดึงจากฐานข้อมูลอัตโนมัติ) -->
+                <div th:each="p : ${activePromos}"
+                     class="border rounded-3 p-2 d-flex justify-content-between align-items-center"
+                     th:classappend="${promoCode != null and promoCode.equalsIgnoreCase(p.promoCode)} ? 'border-warning bg-warning-subtle' : 'bg-light'">
+                    <div>
+                        <strong class="small d-block text-dark">
+                            <span th:text="${p.promoCode}">CODE</span>
+                            <span class="badge bg-warning text-dark"
+                                  th:text="${p.discountType == 'PERCENT'} ? ('ลด ' + ${p.discountValue} + '%') : ('ลด ฿' + ${#numbers.formatDecimal(p.discountValue, 1, 'NONE', 0, 'POINT')})">ลด</span>
+                        </strong>
+                        <span th:if="${subtotal >= p.minOrderAmount}" class="text-success" style="font-size: 0.72rem;">
+                            <i class="bi bi-check-circle"></i> ใช้ได้ (ขั้นต่ำ ฿<span th:text="${#numbers.formatDecimal(p.minOrderAmount, 1, 'NONE', 0, 'POINT')}">0</span>)
+                        </span>
+                        <span th:unless="${subtotal >= p.minOrderAmount}" class="text-danger" style="font-size: 0.72rem;">
+                            <i class="bi bi-exclamation-circle"></i> ใช้ไม่ได้ (สั่งเพิ่มอีก ฿<span th:text="${#numbers.formatDecimal(p.minOrderAmount - subtotal, 1, 'NONE', 0, 'POINT')}">0</span>)
+                        </span>
+                    </div>
+                    <a href="#" th:if="${subtotal >= p.minOrderAmount}"
+                        th:href="@{/payment(table=${tableNumber}, promoCode=${p.promoCode})}"
+                        class="btn btn-sm rounded-pill fw-bold px-3"
+                       th:classappend="${promoCode != null and promoCode.equalsIgnoreCase(p.promoCode)} ? 'btn-success disabled' : 'btn-warning text-white'"
+                       th:text="${promoCode != null and promoCode.equalsIgnoreCase(p.promoCode)} ? 'กำลังใช้งาน' : 'กดใช้โค้ด'">กดใช้โค้ด</a>
+                    <button th:unless="${subtotal >= p.minOrderAmount}" type="button" class="btn btn-sm btn-secondary rounded-pill px-3" disabled>
+                        ไม่ถึงขั้นต่ำ
+                    </button>
+                </div>
+
+            </div>
+        </div>
 
         <!-- สรุปยอดเงิน -->
         <div class="border-top pt-2 mt-2">
