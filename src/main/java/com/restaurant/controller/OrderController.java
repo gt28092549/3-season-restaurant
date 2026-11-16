@@ -156,7 +156,7 @@ public class OrderController {
         return "redirect:/payment?table=" + tableNumber + "&paid=true";
     }
 
-    // 1. หน้าหลักเมนูอาหาร (รองรับค้นหาและเลือกหมวดหมู่)
+    // 1. หน้าหลักเมนูอาหาร
     @GetMapping("/")
     public String index(@RequestParam(defaultValue = "1") Integer table,
                         @RequestParam(required = false) String category,
@@ -185,7 +185,7 @@ public class OrderController {
         return "index";
     }
 
-    // 2. หน้าสถานะครัวของลูกค้า (/order-status)
+    // 2. หน้าสถานะครัวของลูกค้า
     @GetMapping("/order-status")
     public String orderStatus(@RequestParam(defaultValue = "1") Integer table,
                               HttpSession session,
@@ -207,7 +207,7 @@ public class OrderController {
         return "order-status";
     }
 
-    // 4. หน้าสมาชิก / ล็อกอินลูกค้า (/profile)
+    // 4. หน้าสมาชิก/ล็อกอินลูกค้า 
     @GetMapping("/profile")
     public String profilePage(@RequestParam(defaultValue = "1") Integer table,
                               HttpSession session,
@@ -217,7 +217,7 @@ public class OrderController {
         return "profile";
     }
 
-    // สมัครสมาชิก / ล็อกอินด้วยเบอร์โทร
+    // สมัครสมาชิก/ล็อกอินด้วยเบอร์โทร
     @PostMapping("/customer/login")
     public String loginOrRegister(@RequestParam Integer tableNumber,
                                   @RequestParam String phone,
@@ -239,7 +239,7 @@ public class OrderController {
         return "redirect:/profile?table=" + table;
     }
 
-    // 5. สั่งอาหารเข้าครัว (บันทึกเฉพาะจำนวนครั้งที่สั่ง ยังไม่บวกแต้มจนกว่าจะชำระเงิน)
+    // 5. สั่งอาหารเข้าครัว
     @PostMapping("/order/place")
     public String placeOrder(@RequestParam Integer tableNumber,
                              @RequestParam Long menuItemId,
@@ -288,7 +288,7 @@ public class OrderController {
         return c;
     }
 
-    // รองรับกรณีเข้าผ่าน URL /login โดยตรง (ส่งต่อไปหน้าสมาชิก /profile)
+    // รองรับกรณีเข้าผ่าน URL /login โดยตรง (profile)
     @GetMapping("/login")
     public String loginRedirect(@RequestParam(defaultValue = "1") Integer table) {
         return "redirect:/profile?table=" + table;

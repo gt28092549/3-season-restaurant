@@ -76,14 +76,14 @@ public class StaffController {
         return "staff-login";
     }
 
-    // --- 2. ออกจากระบบ ---
+    // --- ออกจากระบบ ---
     @GetMapping("/logout")
     public String staffLogout(HttpSession session) {
         session.invalidate();
         return "redirect:/staff/login";
     }
 
-    // --- 3. หน้าจอครัว (KDS) ---
+    // --- หน้าจอครัว ---
     @GetMapping("/queue")
     public String kitchenQueue(HttpSession session, Model model) {
         if (session.getAttribute("staffUser") == null) {
@@ -110,7 +110,7 @@ public class StaffController {
         return "staff-queue";
     }
 
-    // --- 4. อัปเดตสถานะอาหาร ---
+    // --- อัปเดตสถานะอาหาร ---
     @PostMapping({"/orders/status/{id}", "/order/status/{id}"})
     public String updateOrderStatus(@PathVariable Long id,
                                     @RequestParam String status,
@@ -125,7 +125,7 @@ public class StaffController {
         return "redirect:/staff/queue";
     }
 
-    // --- 5. รับทราบการเรียกพนักงาน ---
+    // --- รับทราบการเรียกพนักงาน ---
     @PostMapping({"/calls/confirm/{id}", "/call/resolve/{id}"})
     public String resolveStaffCall(@PathVariable Long id, HttpSession session) {
         if (session.getAttribute("staffUser") == null) {
@@ -138,7 +138,7 @@ public class StaffController {
         return "redirect:/staff/queue";
     }
 
-    // --- 6. เคลียร์โต๊ะ ---
+    // --- เคลียร์โต๊ะ ---
     @PostMapping("/tables/clear/{tableNumber}")
     public String clearTable(@PathVariable Integer tableNumber, HttpSession session) {
         if (session.getAttribute("staffUser") == null) {
