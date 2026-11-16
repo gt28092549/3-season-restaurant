@@ -41,13 +41,10 @@
 
 ## 🚀 วิธีการรันและทดสอบระบบ (How to Run)
 
-1. เปิดโปรเจกต์ใน **VS Code** หรือ **IntelliJ IDEA** (ใช้ JDK 17 ขึ้นไป)
-2. รันไฟล์หลัก `src/main/java/com/restaurant/ThreeSeasonApplication.java`
-3. เปิดเบราว์เซอร์เข้าใช้งานตามลิงก์ด้านล่าง:
-   - **หน้าสั่งอาหารลูกค้า (โต๊ะ 1):** `http://localhost:8080/?table=1`
-   - **หน้าครัวและจัดการคิวพนักงาน:** `http://localhost:8080/staff/queue`
-   - **หน้าผู้ดูแลระบบ (Admin Dashboard):** `http://localhost:8080/admin`
-   - **หน้าฐานข้อมูล H2 Console:** `http://localhost:8080/h2-console` (JDBC URL: `jdbc:h2:mem:restaurantdb`, User: `sa`, Password: *(เว้นว่าง)*)
+1. เปิดโปรเจกต์ใน **VS Code** หรือ **IntelliJ IDEA** (ตรวจสอบว่าใช้ **JDK 17** ขึ้นไป)
+2. เปิดและรันไฟล์หลักของแอปพลิเคชัน:
+   ```text
+   src/main/java/com/restaurant/ThreeSeasonApplication.java
 ---
    ## Member Responsibilities
 * **6831503081 Acharayu Majan:** พัฒนาระบบหลักทุกอย่าง
